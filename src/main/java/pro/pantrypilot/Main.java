@@ -40,6 +40,7 @@ public class Main {
         server.createContext("/recipe", new pro.pantrypilot.endpoints.pages.recipes.Recipe());
         server.createContext("/lists", new pro.pantrypilot.endpoints.pages.lists.Lists());
         server.createContext("/list", new pro.pantrypilot.endpoints.pages.lists.List());
+        server.createContext("/UserStats", new pro.pantrypilot.endpoints.pages.userStats.userStats());
 
 //        API endpoints
         logger.info("Creating API Contexts");
