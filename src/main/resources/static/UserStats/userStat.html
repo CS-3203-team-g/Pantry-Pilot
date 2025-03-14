@@ -104,7 +104,17 @@
 
                 <div class="mb-3">
                     <label for="age" class="form-label">Age</label>
-                    <input type="number" class="form-control" id="age" name="userAge" required>
+                    <input type="number" class="form-control" id="age" name="age" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="activityLevel" class="form-label">Activity Level</label>
+                    <select class="form-select" id="activityLevel" name = "activityLevel">
+                        <option>Sedentary</option>
+                        <option>Lightly Active</option>
+                        <option>Active</option>
+                        <option>Highly Active</option>
+                    </select>
                 </div>
 
                 <button type="submit" class="btn btn-primary">Submit</button>
@@ -125,6 +135,7 @@
 <script>
     const weightUnit = document.getElementById("weightUnit");
     const selectedUnit = document.getElementsByClassName("unit-display")
+    const userStatsForm = document.getElementById("userStatsForm")
 
     console.log(weightUnit.value)
     weightUnit.addEventListener("change", function() {
@@ -132,6 +143,21 @@
         for(let span of selectedUnit){
             span.innerText = this.value;
         }
+    })
+
+    userStatsForm.addEventListener("submit", async function() {
+        const currWeight = document.getElementById("currentWeight").value;
+        const goalWeight = document.getElementById("goalWeight").value;
+        const age = document.getElementById("age")
+        const activityLevel = document.getElementById("activityLevel");
+
+        const payload = { currWeight, goalWeight, age, activityLevel };
+
+        try{
+        } catch (e) {
+
+        }
+
     })
 </script>
 </body>
