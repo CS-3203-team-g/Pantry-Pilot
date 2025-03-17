@@ -62,7 +62,7 @@ public class GetRecipeDatabasesJSON implements HttpHandler {
 
         byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
 
-        exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+        exchange.getResponseHeaders().add("Content-Type", "application/json; charset=UTF-8");
         exchange.sendResponseHeaders(200, responseBytes.length);
         logger.debug("Response sent with {} bytes", responseBytes.length);
 

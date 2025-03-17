@@ -59,13 +59,16 @@ public class Main {
         server.createContext("/api/removeIngredientFromShoppingList", new pro.pantrypilot.endpoints.api.shoppingLists.RemoveIngredientFromShoppingList());
 
 //      Admin pages
+        logger.info("Creating Admin Contexts");
         server.createContext("/admin", new pro.pantrypilot.endpoints.pages.admin.Admin());
+        server.createContext("/admin/dashboard", new pro.pantrypilot.endpoints.pages.admin.Admin());
+        server.createContext("/admin/content", new pro.pantrypilot.endpoints.pages.admin.Admin());
+        server.createContext("/admin/recipe-editor", new pro.pantrypilot.endpoints.pages.admin.Admin());
         server.createContext("/api/admin/getTotalUsers", new pro.pantrypilot.endpoints.api.admin.GetTotalUsers());
         server.createContext("/api/admin/getTotalRecipes", new pro.pantrypilot.endpoints.api.admin.GetTotalRecipes());
         server.createContext("/api/admin/getActiveSessions", new pro.pantrypilot.endpoints.api.admin.GetActiveSessions());
-        server.createContext("/api/admin/getRecipeDatabases", new pro.pantrypilot.endpoints.api.admin.GetRecipeDatabasesJSON());
-        server.createContext("/api/admin/loadRecipeDatabases", new pro.pantrypilot.endpoints.api.admin.LoadRecipeDatabasesJSON());
-
+        server.createContext("/api/admin/getRecipeDatabasesJSON", new pro.pantrypilot.endpoints.api.admin.GetRecipeDatabasesJSON());
+        server.createContext("/api/admin/loadRecipeDatabasesJSON", new pro.pantrypilot.endpoints.api.admin.LoadRecipeDatabasesJSON());
 
         logger.info("Starting HttpServer");
         server.start();

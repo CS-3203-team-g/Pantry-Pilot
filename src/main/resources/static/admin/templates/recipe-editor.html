@@ -1,0 +1,160 @@
+<!-- Recipe Editor Section -->
+<h2 class="mb-4">Recipe Editor</h2>
+
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">
+            <i class="fas fa-utensils me-2"></i>
+            Recipe Management
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <p><i class="fas fa-info-circle"></i> <strong>How to use the Recipe Editor:</strong></p>
+            <ol>
+                <li>Create a new recipe or load an existing one from the database</li>
+                <li>Fill in the recipe details and add ingredients</li>
+                <li>Save your changes by clicking the "Save Recipe" button</li>
+                <li>Download the database backup at any time</li>
+            </ol>
+        </div>
+        
+        <div class="d-flex justify-content-start mb-4">
+            <button id="newRecipeBtn" class="btn btn-success me-2">
+                <i class="fas fa-plus"></i> New Recipe
+            </button>
+            <button id="loadFromDbButton" class="btn btn-info me-2">
+                <i class="fas fa-database"></i> Load Existing Recipe
+            </button>
+            <input type="file" id="recipeFileInput" accept=".json" style="display: none;">
+            <button id="loadFromFileButton" class="btn btn-primary">
+                <i class="fas fa-file-import"></i> Import From File
+            </button>
+        </div>
+        
+        <!-- Recipe Form -->
+        <form id="recipeForm">
+            <!-- Recipe Details Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Recipe Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="recipeTitle" class="form-label">Recipe Title</label>
+                        <input type="text" class="form-control" id="recipeTitle" placeholder="Enter recipe title" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="thumbnailUrl" class="form-label">Thumbnail URL</label>
+                        <input type="url" class="form-control" id="thumbnailUrl" placeholder="Enter image URL">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="rating" class="form-label">Rating (0-5)</label>
+                        <input type="number" class="form-control" id="rating" min="0" max="5" step="0.1" placeholder="Enter rating">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="instructions" class="form-label">Instructions</label>
+                        <textarea class="form-control" id="instructions" rows="5" placeholder="Enter step-by-step instructions" required></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ingredients Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="fas fa-carrot me-2"></i>Ingredients</h6>
+                </div>
+                <div class="card-body">
+                    <div id="ingredientsList" class="mb-3">
+                        <!-- Ingredient items will be added here dynamically -->
+                    </div>
+                    
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="ingredientName" class="form-label">Ingredient</label>
+                            <input type="text" class="form-control" id="ingredientName" list="existingIngredients" placeholder="Enter ingredient name">
+                            <datalist id="existingIngredients">
+                                <!-- Existing ingredients will be loaded here -->
+                            </datalist>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="quantity" min="0.1" step="0.1" placeholder="Amount">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="unit" class="form-label">Unit</label>
+                            <select class="form-select" id="unit">
+                                <option value="" selected>Select unit</option>
+                                <!-- Units will be loaded here -->
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" id="addIngredientBtn" class="btn btn-primary w-100">
+                                <i class="fas fa-plus me-2"></i>Add Ingredient
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Recipe Preview -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fas fa-eye me-2"></i>Recipe Preview</h6>
+            </div>
+            <div class="card-body">
+                <div id="recipePreview" class="mt-3">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Complete the form above to see a preview of your recipe
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Save and Export Section -->
+        <div class="card-footer bg-light">
+            <div class="d-flex justify-content-end mt-3">
+                <button id="downloadJsonButton" class="btn btn-secondary me-2">
+                    <i class="fas fa-download me-2"></i> Export Database
+                </button>
+                <button type="button" id="saveRecipeBtn" class="btn btn-success">
+                    <i class="fas fa-save me-2"></i> Save Recipe
+                </button>
+            </div>
+        </div>
+        
+        <!-- Hidden JSON storage (not visible to user) -->
+        <textarea id="jsonEditor" style="display: none;"></textarea>
+    </div>
+</div>
+
+<!-- Recipe Selection Modal -->
+<div class="modal fade" id="recipeSelectionModal" tabindex="-1" aria-labelledby="recipeSelectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recipeSelectionModalLabel">Select a Recipe to Edit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="recipeSearchInput" placeholder="Search recipes...">
+                    <button class="btn btn-outline-secondary" type="button" id="recipeSearchButton">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div class="list-group" id="recipeList">
+                    <!-- Recipes will be listed here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

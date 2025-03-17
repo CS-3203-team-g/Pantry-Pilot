@@ -1,0 +1,157 @@
+/* Custom styling for the admin page */
+.admin-section {
+    padding: 3rem 0;
+    margin-top: 2rem;
+}
+
+/* Content section styling */
+.content-section {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.content-section h2 {
+    color: #333;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Sidebar styling */
+.sidebar {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 1rem;
+}
+
+.sidebar .nav-link {
+    color: #333;
+    padding: 0.75rem 1rem;
+    border-radius: 0.25rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s;
+}
+
+.sidebar .nav-link:hover {
+    color: #0d6efd;
+    background-color: #e9ecef;
+}
+
+.sidebar .nav-link.active {
+    background-color: #0d6efd;
+    color: white;
+    font-weight: bold;
+}
+
+/* Stats card styling */
+.stats-card {
+    transition: transform 0.2s;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card:hover {
+    transform: scale(1.05);
+}
+
+.stats-card .card-title,
+.stats-card .card-text,
+.stats-card i {
+    color: #fff !important;
+}
+
+.stats-card .card-title {
+    margin-bottom: 10px;
+}
+
+.stats-card .card-text {
+    position: relative;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    display: inline-block;
+    width: 100px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.7);
+}
+
+/* Table styling */
+.table-responsive {
+    max-height: 500px;
+    overflow-y: auto;
+    border-radius: 0.25rem;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+}
+
+main {
+    flex: 1;
+}
+
+footer {
+    margin-top: auto;
+}
+
+/* JSON editor styling */
+#jsonEditor {
+    width: 100%;
+    min-height: 300px;
+    font-family: monospace;
+    resize: vertical;
+    white-space: pre;
+    border-radius: 0.25rem;
+    border-color: #ced4da;
+    padding: 0.75rem;
+}
+
+.recipe-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    transition: transform 0.2s;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 1.5rem;
+}
+
+.recipe-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.ingredient-item {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 8px;
+    margin-bottom: 8px;
+    border-left: 3px solid #0d6efd;
+}
+
+/* Section headers with icons */
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header i {
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+    color: #0d6efd;
+}
+
+/* Active section styling */
+.active-section {
+    background-color: #f8f9fa;
+    border-left: 5px solid #0d6efd;
+    padding-left: 1rem;
+}

@@ -63,7 +63,7 @@ public class GetActiveSessions implements HttpHandler {
         String response = String.valueOf(totalSessions);
         byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
 
-        exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+        exchange.getResponseHeaders().add("Content-Type", "text/plain; charset=UTF-8");
         exchange.sendResponseHeaders(200, responseBytes.length);
         logger.debug("Response sent with {} bytes", responseBytes.length);
 
