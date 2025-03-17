@@ -15,14 +15,15 @@ public class RecipeIngredientsDatabase {
     private static final Logger logger = LoggerFactory.getLogger(RecipeIngredientsDatabase.class);
 
     public static void initializeRecipeIngredientsDatabase() {
-        String createRecipeIngredientsTableSQL = "CREATE TABLE IF NOT EXISTS recipe_ingredients (\n"
+        String createRecipeIngredientsTableSQL = "CREATE TABLE IF NOT EXISTS pantry_pilot.recipe_ingredients (\n"
                 + "    recipeID INT NOT NULL,\n"
-                + "    ingredientID INT NOT NULL,\n"
+                + "    ingredientID BIGINT UNSIGNED NOT NULL,\n"
                 + "    quantity INT NOT NULL,\n"
-                + "    unit VARCHAR(50),\n"
+                + "    unitID INT NULL,\n"
                 + "    PRIMARY KEY (recipeID, ingredientID),\n"
-                + "    FOREIGN KEY (recipeID) REFERENCES recipes(recipeID) ON DELETE CASCADE,\n"
-                + "    FOREIGN KEY (ingredientID) REFERENCES ingredients(ingredientID) ON DELETE CASCADE\n"
+                + "    FOREIGN KEY (recipeID) REFERENCES pantry_pilot.recipes(recipeID) ON DELETE CASCADE,\n"
+                + "    FOREIGN KEY (ingredientID) REFERENCES pantry_pilot.ingredients(id) ON DELETE CASCADE,\n"
+                + "    FOREIGN KEY (unitID) REFERENCES pantry_pilot.units(unitID)\n"
                 + ");";
         try {
             Statement stmt = DatabaseConnectionManager.getConnection().createStatement();
@@ -34,7 +35,9 @@ public class RecipeIngredientsDatabase {
     }
 
     public static ArrayList<RecipeIngredient> getAllRecipeIngredients() {
-        String getAllRecipeIngredientsSQL = "SELECT * FROM recipe_ingredients;";
+        String getAllRecipeIngredientsSQL = "SELECT ri.recipeID, ri.ingredientID, ri.quantity, u.unitName AS unit " +
+                "FROM recipe_ingredients ri " +
+                "LEFT JOIN units u ON ri.unitID = u.unitID;";
         ArrayList<RecipeIngredient> recipeIngredients = new ArrayList<>();
         try {
             Statement stmt = DatabaseConnectionManager.getConnection().createStatement();
@@ -43,7 +46,7 @@ public class RecipeIngredientsDatabase {
                 int recipeID = resultSet.getInt("recipeID");
                 int ingredientID = resultSet.getInt("ingredientID");
                 int quantity = resultSet.getInt("quantity");
-                String unit = resultSet.getString("unit");
+                String unit = resultSet.getString("unit"); // may be null if unitID is not set
                 recipeIngredients.add(new RecipeIngredient(recipeID, ingredientID, quantity, unit));
             }
         } catch (SQLException e) {

@@ -1,6 +1,8 @@
 package pro.pantrypilot.db.classes.recipe;
 
 import org.junit.jupiter.api.Test;
+import pro.pantrypilot.db.classes.ingredient.Ingredient;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class IngredientTest {

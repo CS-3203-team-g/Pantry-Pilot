@@ -5,8 +5,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pro.pantrypilot.db.classes.recipe.Ingredient;
-import pro.pantrypilot.db.classes.recipe.IngredientsDatabase;
+import pro.pantrypilot.db.classes.ingredient.Ingredient;
+import pro.pantrypilot.db.classes.ingredient.IngredientsDatabase;
 
 import java.io.IOException;
 import java.io.OutputStream;

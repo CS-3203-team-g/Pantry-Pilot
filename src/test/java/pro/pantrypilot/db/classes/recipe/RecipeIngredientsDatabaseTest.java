@@ -2,6 +2,7 @@ package pro.pantrypilot.db.classes.recipe;
 
 import org.junit.jupiter.api.Test;
 import pro.pantrypilot.db.DatabaseConnectionManager;
+import pro.pantrypilot.db.classes.ingredient.IngredientsDatabase;
 
 import java.sql.Connection;
 

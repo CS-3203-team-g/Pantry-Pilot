@@ -9,13 +9,12 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.pantrypilot.db.DatabaseConnectionManager;
-import pro.pantrypilot.db.classes.recipe.IngredientsDatabase;
+import pro.pantrypilot.db.classes.ingredient.IngredientsDatabase;
 import pro.pantrypilot.db.classes.recipe.RecipeDatabase;
 import pro.pantrypilot.db.classes.recipe.RecipeIngredientsDatabase;
 import pro.pantrypilot.db.classes.recipe.Recipe;          // Assuming this exists
 import pro.pantrypilot.db.classes.recipe.RecipeIngredient; // Assuming this exists
-import pro.pantrypilot.db.classes.recipe.Ingredient;       // Assuming this exists
-import pro.pantrypilot.endpoints.api.admin.LoadRecipeDatabasesJSON;
+import pro.pantrypilot.db.classes.ingredient.Ingredient;       // Assuming this exists
 
 import java.lang.reflect.Type;
 import java.sql.Connection;

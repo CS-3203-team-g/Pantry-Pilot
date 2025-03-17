@@ -4,6 +4,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pro.pantrypilot.db.DatabaseConnectionManager;
+import pro.pantrypilot.db.classes.ingredient.Ingredient;
+import pro.pantrypilot.db.classes.ingredient.IngredientsDatabase;
 
 import java.sql.Connection;
 import java.sql.Statement;
@@ -28,8 +30,8 @@ class IngredientsDatabaseTest {
         
         // Insert test data
         try (Statement stmt = connection.createStatement()) {
-            stmt.execute("INSERT INTO ingredients (ingredientID, ingredientName) VALUES (1, 'flour')");
-            stmt.execute("INSERT INTO ingredients (ingredientID, ingredientName) VALUES (2, 'sugar')");
+            stmt.execute("INSERT INTO ingredients (id, name) VALUES (1, 'flour')");
+            stmt.execute("INSERT INTO ingredients (id, name) VALUES (2, 'sugar')");
         }
     }
 

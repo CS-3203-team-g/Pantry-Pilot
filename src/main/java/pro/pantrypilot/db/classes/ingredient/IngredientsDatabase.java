@@ -1,4 +1,4 @@
-package pro.pantrypilot.db.classes.recipe;
+package pro.pantrypilot.db.classes.ingredient;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,9 +13,11 @@ public class IngredientsDatabase {
     private static final Logger logger = LoggerFactory.getLogger(IngredientsDatabase.class);
 
     public static void initializeIngredientsDatabase() {
-        String createIngredientsTableSQL = "CREATE TABLE IF NOT EXISTS ingredients (\n"
-                + "    ingredientID INT AUTO_INCREMENT PRIMARY KEY,\n"
-                + "    ingredientName VARCHAR(255) NOT NULL UNIQUE\n"
+        String createIngredientsTableSQL = "CREATE TABLE IF NOT EXISTS pantry_pilot.ingredients (\n"
+                + "    id SERIAL PRIMARY KEY,\n"
+                + "    name TEXT UNIQUE NOT NULL,\n"
+                + "    default_unit_id INT,\n"
+                + "    FOREIGN KEY (default_unit_id) REFERENCES pantry_pilot.units(unitID)\n"
                 + ");";
         try {
             Statement stmt = DatabaseConnectionManager.getConnection().createStatement();
@@ -27,13 +29,13 @@ public class IngredientsDatabase {
     }
 
     public static ArrayList<String> getAllIngredientNames() {
-        String getAllIngredientsSQL = "SELECT ingredientName FROM ingredients;";
+        String getAllIngredientsSQL = "SELECT name FROM ingredients;";
         ArrayList<String> ingredientNames = new ArrayList<>();
         try (Statement statement = DatabaseConnectionManager.getConnection().createStatement();
              ResultSet resultSet = statement.executeQuery(getAllIngredientsSQL)) {
 
             while (resultSet.next()) {
-                ingredientNames.add(resultSet.getString("ingredientName"));
+                ingredientNames.add(resultSet.getString("name"));
             }
         } catch (SQLException e) {
             logger.error("Error retrieving ingredient names", e);
@@ -59,7 +61,7 @@ public class IngredientsDatabase {
 
 
     public static boolean loadAllIngredients(List<Ingredient> ingredients) {
-        String insertRecipeSQL = "INSERT INTO ingredients (ingredientID, ingredientName) VALUES (?, ?);";
+        String insertRecipeSQL = "INSERT INTO ingredients (id, name) VALUES (?, ?);";
 
         try {
             Connection conn = DatabaseConnectionManager.getConnection();

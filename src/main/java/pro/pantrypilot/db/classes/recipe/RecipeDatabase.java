@@ -73,11 +73,12 @@ public class RecipeDatabase {
 
     public static List<Recipe> getRecipesWithIngredients() {
         String sql = "SELECT r.recipeID, r.title AS recipe_name, r.instructions, r.rating, r.thumbnailUrl, " +
-                "i.ingredientID, i.ingredientName AS ingredient_name, " +
-                "ri.quantity, ri.unit " +
+                "i.id AS ingredientID, i.name AS ingredient_name, " +
+                "ri.quantity, u.unitName AS unit " +
                 "FROM recipes r " +
                 "JOIN recipe_ingredients ri ON r.recipeID = ri.recipeID " +
-                "JOIN ingredients i ON ri.ingredientID = i.ingredientID";
+                "JOIN ingredients i ON ri.ingredientID = i.id " +
+                "LEFT JOIN units u ON ri.unitID = u.unitID";
 
         List<Recipe> recipes = new ArrayList<>();
         Map<Integer, Recipe> recipeMap = new HashMap<>();
@@ -119,11 +120,12 @@ public class RecipeDatabase {
 
     public static Recipe getRecipeWithIngredients(int recipeID) {
         String sql = "SELECT r.recipeID, r.title AS recipe_name, r.instructions, r.rating, r.thumbnailUrl, " +
-                "i.ingredientID, i.ingredientName AS ingredient_name, " +
-                "ri.quantity, ri.unit " +
+                "i.id AS ingredientID, i.name AS ingredient_name, " +
+                "ri.quantity, u.unitName AS unit " +
                 "FROM recipes r " +
                 "JOIN recipe_ingredients ri ON r.recipeID = ri.recipeID " +
-                "JOIN ingredients i ON ri.ingredientID = i.ingredientID " +
+                "JOIN ingredients i ON ri.ingredientID = i.id " +
+                "LEFT JOIN units u ON ri.unitID = u.unitID " +
                 "WHERE r.recipeID = ?";
 
         Recipe recipe = null;
@@ -146,7 +148,7 @@ public class RecipeDatabase {
                         int ingredientID = rs.getInt("ingredientID");
                         String ingredientName = rs.getString("ingredient_name");
                         int quantity = rs.getInt("quantity");
-                        String unit = rs.getString("unit");
+                        String unit = rs.getString("unit"); // may be null if unitID is null in recipe_ingredients
                         RecipeIngredient ingredient = new RecipeIngredient(recipeID, ingredientID, quantity, unit, ingredientName);
                         recipe.getIngredients().add(ingredient);
                     }

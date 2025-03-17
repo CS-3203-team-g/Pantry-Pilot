@@ -2,12 +2,15 @@ package pro.pantrypilot.db;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pro.pantrypilot.db.classes.recipe.IngredientsDatabase;
+import pro.pantrypilot.db.classes.ingredient.IngredientUnitsDatabase;
+import pro.pantrypilot.db.classes.nutrition.NutritionalInformationDatabase;
+import pro.pantrypilot.db.classes.ingredient.IngredientsDatabase;
 import pro.pantrypilot.db.classes.recipe.RecipeDatabase;
 import pro.pantrypilot.db.classes.recipe.RecipeIngredientsDatabase;
 import pro.pantrypilot.db.classes.session.SessionsDatabase;
 import pro.pantrypilot.db.classes.shoppingList.ShoppingListIngredientsDatabase;
 import pro.pantrypilot.db.classes.shoppingList.ShoppingListsDatabase;
+import pro.pantrypilot.db.classes.unit.UnitsDatabase;
 import pro.pantrypilot.db.classes.user.UsersDatabase;
 
 import java.sql.Connection;
@@ -64,13 +67,16 @@ public class DatabaseConnectionManager {
 
     public static void initializeDatabase() {
 
+        UnitsDatabase.initializeUnitsDatabase();
         UsersDatabase.initializeUserDatabase();
         SessionsDatabase.initializeSessionsDatabase();
         IngredientsDatabase.initializeIngredientsDatabase();
         RecipeDatabase.initializeRecipeDatabase();
-        RecipeIngredientsDatabase.initializeRecipeIngredientsDatabase();
         ShoppingListsDatabase.initializeShoppingListsDatabase();
         ShoppingListIngredientsDatabase.initializeShoppingListIngredientsDatabase();
+        IngredientUnitsDatabase.initializeIngredientUnitsDatabase();
+        RecipeIngredientsDatabase.initializeRecipeIngredientsDatabase();
+        NutritionalInformationDatabase.initializeNutritionalInformationDatabase();
 
     }
 }

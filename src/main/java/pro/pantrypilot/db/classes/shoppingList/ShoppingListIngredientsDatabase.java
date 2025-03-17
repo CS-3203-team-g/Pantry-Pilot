@@ -13,14 +13,15 @@ public class ShoppingListIngredientsDatabase {
     private static final Logger logger = LoggerFactory.getLogger(ShoppingListIngredientsDatabase.class);
 
     public static void initializeShoppingListIngredientsDatabase() {
-        String createShoppingListIngredientsTableSQL = "CREATE TABLE IF NOT EXISTS shopping_list_ingredients (\n"
+        String createShoppingListIngredientsTableSQL = "CREATE TABLE IF NOT EXISTS pantry_pilot.shopping_list_ingredients (\n"
                 + "    shoppingListID INT NOT NULL,\n"
-                + "    ingredientID INT NOT NULL,\n"
+                + "    ingredientID BIGINT UNSIGNED NOT NULL,\n"
                 + "    quantity INT NOT NULL,\n"
-                + "    unit VARCHAR(50),\n"
+                + "    unitID INT NULL,\n"
                 + "    PRIMARY KEY (shoppingListID, ingredientID),\n"
-                + "    FOREIGN KEY (shoppingListID) REFERENCES shopping_lists(shoppingListID) ON DELETE CASCADE,\n"
-                + "    FOREIGN KEY (ingredientID) REFERENCES ingredients(ingredientID) ON DELETE CASCADE\n"
+                + "    FOREIGN KEY (shoppingListID) REFERENCES pantry_pilot.shopping_lists(shoppingListID) ON DELETE CASCADE,\n"
+                + "    FOREIGN KEY (ingredientID) REFERENCES pantry_pilot.ingredients(id) ON DELETE CASCADE,\n"
+                + "    FOREIGN KEY (unitID) REFERENCES pantry_pilot.units(unitID)\n"
                 + ");";
         try {
             Statement stmt = DatabaseConnectionManager.getConnection().createStatement();

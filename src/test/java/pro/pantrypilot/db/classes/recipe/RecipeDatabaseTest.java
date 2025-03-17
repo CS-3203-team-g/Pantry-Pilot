@@ -4,6 +4,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pro.pantrypilot.db.DatabaseConnectionManager;
+import pro.pantrypilot.db.classes.ingredient.IngredientsDatabase;
 
 import java.sql.Connection;
 import java.sql.Statement;
@@ -37,10 +38,11 @@ class RecipeDatabaseTest {
                         "VALUES (" + TEST_RECIPE_ID + ", 'Tiramisu Blondies', " +
                         "'Preheat the oven to 350 degrees...', " +
                         "'https://www.allrecipes.com/thmb/example.jpg', 0)");
-            stmt.execute("INSERT INTO ingredients (ingredientID, ingredientName) " +
+            stmt.execute("INSERT INTO ingredients (id, name) " +
                         "VALUES (1, 'semisweet chocolate chips')");
-            stmt.execute("INSERT INTO recipe_ingredients (recipeID, ingredientID, quantity, unit) " +
-                        "VALUES (" + TEST_RECIPE_ID + ", 1, 1, 'cup')");
+            stmt.execute("INSERT INTO units (unitID, unitName) VALUES (1, 'cup')");
+            stmt.execute("INSERT INTO recipe_ingredients (recipeID, ingredientID, quantity, unitID) " +
+                        "VALUES (" + TEST_RECIPE_ID + ", 1, 1, 1)");
         }
     }
 
@@ -51,6 +53,7 @@ class RecipeDatabaseTest {
             stmt.execute("DELETE FROM recipe_ingredients");
             stmt.execute("DELETE FROM recipes");
             stmt.execute("DELETE FROM ingredients");
+            stmt.execute("DELETE FROM units");
         }
     }
 

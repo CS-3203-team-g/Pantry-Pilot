@@ -1,4 +1,4 @@
-package pro.pantrypilot.db.classes.recipe;
+package pro.pantrypilot.db.classes.ingredient;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +20,8 @@ public class Ingredient {
 
     public Ingredient(ResultSet rs) {
         try {
-            this.ingredientID = rs.getInt("ingredientID");
-            this.ingredientName = rs.getString("ingredientName");
+            this.ingredientID = rs.getInt("id");
+            this.ingredientName = rs.getString("name");
         } catch (SQLException e) {
             logger.error("Error creating ingredient from ResultSet", e);
             throw new RuntimeException(e);
