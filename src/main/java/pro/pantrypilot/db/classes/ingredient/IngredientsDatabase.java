@@ -14,10 +14,11 @@ public class IngredientsDatabase {
 
     public static void initializeIngredientsDatabase() {
         String createIngredientsTableSQL = "CREATE TABLE IF NOT EXISTS pantry_pilot.ingredients (\n"
-                + "    id SERIAL PRIMARY KEY,\n"
-                + "    name TEXT UNIQUE NOT NULL,\n"
-                + "    default_unit_id INT,\n"
-                + "    FOREIGN KEY (default_unit_id) REFERENCES pantry_pilot.units(unitID)\n"
+                + "    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,\n"
+                + "    name TEXT NOT NULL,\n"
+                + "    default_unit_id INT NULL,\n"
+                + "    CONSTRAINT name UNIQUE (name) USING HASH,\n"
+                + "    CONSTRAINT ingredients_ibfk_1 FOREIGN KEY (default_unit_id) REFERENCES pantry_pilot.units (unitID)\n"
                 + ");";
         try {
             Statement stmt = DatabaseConnectionManager.getConnection().createStatement();
@@ -61,20 +62,28 @@ public class IngredientsDatabase {
 
 
     public static boolean loadAllIngredients(List<Ingredient> ingredients) {
-        String insertRecipeSQL = "INSERT INTO ingredients (id, name) VALUES (?, ?);";
+        String insertRecipeSQL = "INSERT INTO ingredients (id, name, default_unit_id) VALUES (?, ?, ?);";
 
         try {
             Connection conn = DatabaseConnectionManager.getConnection();
             try (PreparedStatement preparedStatement = conn.prepareStatement(insertRecipeSQL)) {
                 for (Ingredient ingredient : ingredients) {
-                    preparedStatement.setInt(1, ingredient.getIngredientID());
+                    preparedStatement.setLong(1, ingredient.getIngredientID());
                     preparedStatement.setString(2, ingredient.getIngredientName());
+                    
+                    // Handle null default_unit_id
+                    if (ingredient.getDefaultUnitID() != null) {
+                        preparedStatement.setInt(3, ingredient.getDefaultUnitID());
+                    } else {
+                        preparedStatement.setNull(3, Types.INTEGER);
+                    }
+                    
                     preparedStatement.addBatch();
                 }
                 preparedStatement.executeBatch();
             }
         } catch (SQLException e) {
-            logger.error("Error replacing all recipes", e);
+            logger.error("Error replacing all ingredients", e);
             return false;
         }
         return true;

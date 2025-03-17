@@ -74,7 +74,7 @@ public class RecipeDatabase {
     public static List<Recipe> getRecipesWithIngredients() {
         String sql = "SELECT r.recipeID, r.title AS recipe_name, r.instructions, r.rating, r.thumbnailUrl, " +
                 "i.id AS ingredientID, i.name AS ingredient_name, " +
-                "ri.quantity, u.unitName AS unit " +
+                "ri.quantity, ri.unitID, u.unitName AS unit_name " +
                 "FROM recipes r " +
                 "JOIN recipe_ingredients ri ON r.recipeID = ri.recipeID " +
                 "JOIN ingredients i ON ri.ingredientID = i.id " +
@@ -102,12 +102,19 @@ public class RecipeDatabase {
                         recipes.add(recipe);
                     }
 
-                    int ingredientID = rs.getInt("ingredientID");
+                    long ingredientID = rs.getLong("ingredientID");
                     String ingredientName = rs.getString("ingredient_name");
                     int quantity = rs.getInt("quantity");
-                    String unit = rs.getString("unit");
 
-                    RecipeIngredient ingredient = new RecipeIngredient(recipeID, ingredientID, quantity, unit, ingredientName);
+                    // Handle null unitID
+                    Integer unitID = null;
+                    if (rs.getObject("unitID") != null) {
+                        unitID = rs.getInt("unitID");
+                    }
+
+                    String unitName = rs.getString("unit_name");
+
+                    RecipeIngredient ingredient = new RecipeIngredient(recipeID, ingredientID, quantity, unitID, ingredientName, unitName);
                     recipe.getIngredients().add(ingredient);
                 }
             }
@@ -121,7 +128,7 @@ public class RecipeDatabase {
     public static Recipe getRecipeWithIngredients(int recipeID) {
         String sql = "SELECT r.recipeID, r.title AS recipe_name, r.instructions, r.rating, r.thumbnailUrl, " +
                 "i.id AS ingredientID, i.name AS ingredient_name, " +
-                "ri.quantity, u.unitName AS unit " +
+                "ri.quantity, ri.unitID, u.unitName AS unit_name " +
                 "FROM recipes r " +
                 "JOIN recipe_ingredients ri ON r.recipeID = ri.recipeID " +
                 "JOIN ingredients i ON ri.ingredientID = i.id " +
@@ -145,11 +152,19 @@ public class RecipeDatabase {
                             float rating = rs.getFloat("rating");
                             recipe = new Recipe(recipeID, title, thumbnailUrl, instructions, new ArrayList<>(), rating);
                         }
-                        int ingredientID = rs.getInt("ingredientID");
+                        long ingredientID = rs.getLong("ingredientID");
                         String ingredientName = rs.getString("ingredient_name");
                         int quantity = rs.getInt("quantity");
-                        String unit = rs.getString("unit"); // may be null if unitID is null in recipe_ingredients
-                        RecipeIngredient ingredient = new RecipeIngredient(recipeID, ingredientID, quantity, unit, ingredientName);
+
+                        // Handle null unitID
+                        Integer unitID = null;
+                        if (rs.getObject("unitID") != null) {
+                            unitID = rs.getInt("unitID");
+                        }
+
+                        String unitName = rs.getString("unit_name");
+
+                        RecipeIngredient ingredient = new RecipeIngredient(recipeID, ingredientID, quantity, unitID, ingredientName, unitName);
                         recipe.getIngredients().add(ingredient);
                     }
                 }

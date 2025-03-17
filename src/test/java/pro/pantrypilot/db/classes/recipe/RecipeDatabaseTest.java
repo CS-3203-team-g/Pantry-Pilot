@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pro.pantrypilot.db.DatabaseConnectionManager;
 import pro.pantrypilot.db.classes.ingredient.IngredientsDatabase;
+import pro.pantrypilot.db.classes.unit.UnitsDatabase;
 
 import java.sql.Connection;
 import java.sql.Statement;
@@ -20,6 +21,7 @@ class RecipeDatabaseTest {
     @BeforeEach
     void setUp() throws Exception {
         // Initialize the test databases
+        UnitsDatabase.initializeUnitsDatabase();
         IngredientsDatabase.initializeIngredientsDatabase();
         RecipeDatabase.initializeRecipeDatabase();
         RecipeIngredientsDatabase.initializeRecipeIngredientsDatabase();
@@ -30,17 +32,18 @@ class RecipeDatabaseTest {
             stmt.execute("DELETE FROM recipe_ingredients");
             stmt.execute("DELETE FROM recipes");
             stmt.execute("DELETE FROM ingredients");
+            stmt.execute("DELETE FROM units");
         }
         
         // Insert test data
         try (Statement stmt = connection.createStatement()) {
+            stmt.execute("INSERT INTO units (unitID, unitName) VALUES (1, 'cup')");
             stmt.execute("INSERT INTO recipes (recipeID, title, instructions, thumbnailUrl, rating) " +
                         "VALUES (" + TEST_RECIPE_ID + ", 'Tiramisu Blondies', " +
                         "'Preheat the oven to 350 degrees...', " +
                         "'https://www.allrecipes.com/thmb/example.jpg', 0)");
             stmt.execute("INSERT INTO ingredients (id, name) " +
                         "VALUES (1, 'semisweet chocolate chips')");
-            stmt.execute("INSERT INTO units (unitID, unitName) VALUES (1, 'cup')");
             stmt.execute("INSERT INTO recipe_ingredients (recipeID, ingredientID, quantity, unitID) " +
                         "VALUES (" + TEST_RECIPE_ID + ", 1, 1, 1)");
         }
@@ -91,7 +94,8 @@ class RecipeDatabaseTest {
         RecipeIngredient ingredient = recipe.getIngredients().get(0);
         assertEquals("semisweet chocolate chips", ingredient.getIngredientName());
         assertEquals(1, ingredient.getQuantity());
-        assertEquals("cup", ingredient.getUnit());
+        assertEquals("cup", ingredient.getUnitName());
+        assertEquals(1, ingredient.getUnitID());
     }
 
     @Test
@@ -106,7 +110,8 @@ class RecipeDatabaseTest {
         RecipeIngredient ingredient = recipe.getIngredients().get(0);
         assertEquals("semisweet chocolate chips", ingredient.getIngredientName());
         assertEquals(1, ingredient.getQuantity());
-        assertEquals("cup", ingredient.getUnit());
+        assertEquals("cup", ingredient.getUnitName());
+        assertEquals(1, ingredient.getUnitID());
     }
 
     @Test

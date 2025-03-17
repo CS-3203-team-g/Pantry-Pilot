@@ -351,7 +351,9 @@
                 <h4>Ingredients</h4>
                 <ul>
                   ${recipe.ingredients.map(ingredient => `
-                    <li>${ingredient.quantity} ${ingredient.unit} ${ingredient.ingredientName}</li>
+                    <li>${ingredient.quantity} ${ingredient.unitName && ingredient.quantity > 1 ?
+                                    (ingredient.unitName.endsWith('s') ? ingredient.unitName : ingredient.unitName + 's') :
+                                    ingredient.unitName} ${ingredient.ingredientName}</li>
                   `).join('')}
                 </ul>
               </section>

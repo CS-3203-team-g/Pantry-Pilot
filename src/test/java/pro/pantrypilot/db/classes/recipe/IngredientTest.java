@@ -9,8 +9,17 @@ class IngredientTest {
 
     @Test
     void testConstructorAndGetters() {
-        Ingredient ingredient = new Ingredient(1, "sugar");
+        Ingredient ingredient = new Ingredient(1, "sugar", null);
         assertEquals(1, ingredient.getIngredientID());
         assertEquals("sugar", ingredient.getIngredientName());
+        assertNull(ingredient.getDefaultUnitID());
+    }
+
+    @Test
+    void testConstructorWithDefaultUnit() {
+        Ingredient ingredient = new Ingredient(1, "sugar", 2);
+        assertEquals(1, ingredient.getIngredientID());
+        assertEquals("sugar", ingredient.getIngredientName());
+        assertEquals(2, ingredient.getDefaultUnitID());
     }
 }

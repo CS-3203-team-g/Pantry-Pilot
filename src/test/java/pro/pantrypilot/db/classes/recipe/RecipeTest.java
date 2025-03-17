@@ -9,7 +9,7 @@ class RecipeTest {
     @Test
     void testConstructorAndGettersWithIngredients() {
         ArrayList<RecipeIngredient> ingredients = new ArrayList<>();
-        ingredients.add(new RecipeIngredient(1, 1, 2, "cups", "flour"));
+        ingredients.add(new RecipeIngredient(1, 1, 2, 1, "flour", "cups"));
         
         Recipe recipe = new Recipe(1, "Test Recipe", "thumbnail.jpg", "Test instructions", ingredients, 4.5f);
         
@@ -37,7 +37,7 @@ class RecipeTest {
     void testSetIngredients() {
         Recipe recipe = new Recipe(1, "Test Recipe", "thumbnail.jpg", "Test instructions", 4.5f);
         ArrayList<RecipeIngredient> ingredients = new ArrayList<>();
-        ingredients.add(new RecipeIngredient(1, 1, 2, "cups", "flour"));
+        ingredients.add(new RecipeIngredient(1, 1, 2, 1, "flour", "cups"));
         
         recipe.setIngredients(ingredients);
         assertEquals(ingredients, recipe.getIngredients());
@@ -46,7 +46,7 @@ class RecipeTest {
     @Test
     void testToString() {
         ArrayList<RecipeIngredient> ingredients = new ArrayList<>();
-        ingredients.add(new RecipeIngredient(1, 1, 2, "cups", "flour"));
+        ingredients.add(new RecipeIngredient(1, 1, 2, 1, "flour", "cups"));
         Recipe recipe = new Recipe(1, "Test Recipe", "thumbnail.jpg", "Test instructions", ingredients, 4.5f);
         
         String expected = "Recipe{recipeID=1, title='Test Recipe', thumbnailUrl='thumbnail.jpg', " +
