@@ -129,10 +129,26 @@ const RecipeConversionUI = {
             }
         });
         
-        // Get all ingredient units data
-        const ingredientUnits = RecipeData.data.ingredientUnits || [];
+        // Get current recipe
+        const currentRecipe = RecipeData.getCurrentRecipe();
+        if (!currentRecipe || !currentRecipe.recipeID) {
+            if (emptyMessage) emptyMessage.style.display = "block";
+            return;
+        }
         
-        if (ingredientUnits.length === 0) {
+        // Get ingredients for current recipe
+        const recipeIngredients = RecipeData.getIngredientsForRecipe(currentRecipe.recipeID);
+        
+        // Create a set of ingredient IDs in the current recipe for quick lookup
+        const recipeIngredientIds = new Set(recipeIngredients.map(ri => ri.ingredientID));
+        
+        // Get all ingredient units data that match ingredients in the current recipe
+        const allIngredientUnits = RecipeData.data.ingredientUnits || [];
+        const relevantIngredientUnits = allIngredientUnits.filter(iu => 
+            recipeIngredientIds.has(iu.ingredientID)
+        );
+        
+        if (relevantIngredientUnits.length === 0) {
             if (emptyMessage) emptyMessage.style.display = "block";
             return;
         }
@@ -140,8 +156,7 @@ const RecipeConversionUI = {
         if (emptyMessage) emptyMessage.style.display = "none";
         
         // Sort by ingredient name, then unit name
-        // Fixed: defining all variables before use to avoid temporal dead zone issues
-        const sortedData = [...ingredientUnits].sort(function(a, b) {
+        const sortedData = [...relevantIngredientUnits].sort(function(a, b) {
             var ingredientA = RecipeData.data.ingredients.find(i => i.ingredientID === a.ingredientID);
             var ingredientB = RecipeData.data.ingredients.find(i => i.ingredientID === b.ingredientID);
             var ingredientNameA = ingredientA ? ingredientA.ingredientName : '';
@@ -166,13 +181,20 @@ const RecipeConversionUI = {
             
             if (!ingredient || !unit) return;
             
+            // Find the recipe ingredient to get the unit that's used in the recipe
+            const recipeIngredient = recipeIngredients.find(ri => ri.ingredientID === cf.ingredientID);
+            const recipeUnitName = recipeIngredient ? recipeIngredient.unitName : '';
+            
             const div = document.createElement("div");
             div.className = "conversion-factor-item d-flex justify-content-between align-items-center";
+            div.dataset.index = index;
+            
+            // Create the display view with improved text format, always showing -> gram
             div.innerHTML = `
                 <div class="conversion-factor-info">
-                    <span class="fw-bold">${ingredient.ingredientName}</span>
-                    <span class="text-secondary"> - ${unit.unitName}</span>
-                    <span class="ms-2 badge bg-light text-dark">Factor: ${cf.conversionFactor || 1}</span>
+                    <span class="fw-bold">${recipeUnitName} of ${ingredient.ingredientName}</span>
+                    <span class="text-secondary"> → gram</span>
+                    <span class="ms-2 badge bg-light text-dark conversion-factor-display">Factor: ${cf.conversionFactor || 1}</span>
                 </div>
                 <div class="conversion-factor-actions">
                     <button class="btn btn-sm btn-outline-primary edit-conversion-factor me-1" data-index="${index}">
@@ -184,10 +206,11 @@ const RecipeConversionUI = {
                 </div>
             `;
             
-            // Add edit functionality
+            // Add edit functionality for inline editing
             const editBtn = div.querySelector('.edit-conversion-factor');
-            editBtn.addEventListener('click', () => {
-                this.loadConversionFactorIntoForm(cf, index);
+            editBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.enableInlineEditing(div, cf, index);
             });
             
             // Add delete functionality
@@ -200,6 +223,95 @@ const RecipeConversionUI = {
             });
             
             list.appendChild(div);
+        });
+    },
+    
+    // New method to handle inline editing
+    enableInlineEditing(itemElement, conversionFactor, index) {
+        // Get the display span and conversion factor info div
+        const displaySpan = itemElement.querySelector('.conversion-factor-display');
+        const infoDiv = itemElement.querySelector('.conversion-factor-info');
+        const currentValue = conversionFactor.conversionFactor || 1;
+        
+        // Create input element for inline editing
+        const inputGroup = document.createElement('div');
+        inputGroup.className = 'input-group input-group-sm conversion-factor-editor';
+        inputGroup.innerHTML = `
+            <input type="number" step="0.01" min="0.01" class="form-control form-control-sm conversion-factor-input" 
+                   value="${currentValue}" style="width: 80px;">
+            <button class="btn btn-sm btn-success save-conversion-factor" type="button">
+                <i class="fas fa-check"></i>
+            </button>
+            <button class="btn btn-sm btn-secondary cancel-conversion-factor" type="button">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        // Hide the display span and append the editor
+        displaySpan.style.display = 'none';
+        infoDiv.appendChild(inputGroup);
+        
+        // Disable the edit and delete buttons while editing
+        const actionButtons = itemElement.querySelectorAll('.conversion-factor-actions button');
+        actionButtons.forEach(button => button.disabled = true);
+        
+        // Focus the input
+        const input = inputGroup.querySelector('.conversion-factor-input');
+        input.focus();
+        input.select();
+        
+        // Add event listener for the save button
+        const saveBtn = inputGroup.querySelector('.save-conversion-factor');
+        saveBtn.addEventListener('click', () => {
+            const newValue = parseFloat(input.value);
+            if (!isNaN(newValue) && newValue > 0) {
+                // Update the conversion factor
+                const ingredient = RecipeData.data.ingredients.find(i => i.ingredientID === conversionFactor.ingredientID);
+                const unit = RecipeData.data.units.find(u => u.unitID === conversionFactor.unitID);
+                
+                RecipeData.addOrUpdateConversionFactor(
+                    conversionFactor.ingredientID,
+                    conversionFactor.unitID,
+                    newValue,
+                    index
+                );
+                
+                // Update the display and revert to display mode
+                displaySpan.textContent = `Factor: ${newValue}`;
+                displaySpan.style.display = '';
+                infoDiv.removeChild(inputGroup);
+                
+                // Re-enable the action buttons
+                actionButtons.forEach(button => button.disabled = false);
+                
+                // Update the JSON editor
+                RecipeData.updateJsonEditor();
+            } else {
+                alert('Please enter a valid positive number for the conversion factor.');
+                input.focus();
+            }
+        });
+        
+        // Add event listener for the cancel button
+        const cancelBtn = inputGroup.querySelector('.cancel-conversion-factor');
+        cancelBtn.addEventListener('click', () => {
+            // Revert to display mode without saving
+            displaySpan.style.display = '';
+            infoDiv.removeChild(inputGroup);
+            
+            // Re-enable the action buttons
+            actionButtons.forEach(button => button.disabled = false);
+        });
+        
+        // Add event listener for Enter key
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveBtn.click();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelBtn.click();
+            }
         });
     }
 };
