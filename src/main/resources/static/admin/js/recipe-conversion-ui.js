@@ -1,4 +1,4 @@
-// UI for conversion factors management
+// UI for conversion factors and nutrition management
 const RecipeConversionUI = {
     // Conversion factors management
     populateIngredientsDropdown() {
@@ -189,43 +189,45 @@ const RecipeConversionUI = {
             div.className = "conversion-factor-item d-flex justify-content-between align-items-center";
             div.dataset.index = index;
             
-            // Create the display view with improved text format, always showing -> gram
             div.innerHTML = `
-                <div class="conversion-factor-info">
-                    <span class="fw-bold">${recipeUnitName} of ${ingredient.ingredientName}</span>
-                    <span class="text-secondary"> → gram</span>
-                    <span class="ms-2 badge bg-light text-dark conversion-factor-display">Factor: ${cf.conversionFactor || 1}</span>
-                </div>
-                <div class="conversion-factor-actions">
-                    <button class="btn btn-sm btn-outline-primary edit-conversion-factor me-1" data-index="${index}">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger delete-conversion-factor" data-index="${index}">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                <div class="d-flex justify-content-between align-items-start w-100">
+                    <div class="conversion-factor-info flex-grow-0" style="width: 40%;">
+                        <span class="fw-bold">${recipeUnitName} of ${ingredient.ingredientName}</span>
+                        <span class="text-secondary"> → gram</span>
+                        <span class="ms-2 badge bg-light text-dark conversion-factor-display">Factor: ${cf.conversionFactor || 1}</span>
+                    </div>
+                    <div class="nutritional-info flex-grow-1">
+                        ${this.renderNutritionalInfo(cf.ingredientID, cf.unitID)}
+                    </div>
+                    <div class="conversion-factor-actions flex-grow-0">
+                        <button class="btn btn-sm btn-outline-primary edit-conversion-factor me-1" data-index="${index}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary edit-nutrition" data-ingredient="${cf.ingredientID}" data-unit="${cf.unitID}">
+                            <i class="fas fa-drumstick-bite"></i>
+                        </button>
+                    </div>
                 </div>
             `;
-            
-            // Add edit functionality for inline editing
+
+            // Add edit functionality for conversion factor
             const editBtn = div.querySelector('.edit-conversion-factor');
             editBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.enableInlineEditing(div, cf, index);
             });
-            
-            // Add delete functionality
-            const deleteBtn = div.querySelector('.delete-conversion-factor');
-            deleteBtn.addEventListener('click', () => {
-                if (confirm(`Are you sure you want to delete the conversion factor for ${ingredient.ingredientName} (${unit.unitName})?`)) {
-                    RecipeData.removeConversionFactor(index);
-                    this.renderConversionFactorsList();
-                }
+
+            // Add nutrition edit functionality
+            const nutritionBtn = div.querySelector('.edit-nutrition');
+            nutritionBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.enableNutritionEditing(div, cf.ingredientID, cf.unitID);
             });
             
             list.appendChild(div);
         });
     },
-    
+
     // New method to handle inline editing
     enableInlineEditing(itemElement, conversionFactor, index) {
         // Get the display span and conversion factor info div
@@ -312,6 +314,112 @@ const RecipeConversionUI = {
                 e.preventDefault();
                 cancelBtn.click();
             }
+        });
+    },
+
+    renderNutritionalInfo(ingredientID, unitID) {
+        const nutrition = RecipeData.data.nutritionFacts?.find(n => 
+            n.ingredientID === ingredientID && n.unitID === unitID
+        ) || { calories: 0, protein: 0, fat: 0, carbohydrates: 0 };
+
+        return `
+            <div class="nutrition-facts small text-muted mt-1">
+                <span class="me-2">Cal: ${nutrition.calories || 0}</span>
+                <span class="me-2">Pro: ${nutrition.protein || 0}g</span>
+                <span class="me-2">Fat: ${nutrition.fat || 0}g</span>
+                <span>Carbs: ${nutrition.carbohydrates || 0}g</span>
+            </div>
+        `;
+    },
+
+    enableNutritionEditing(itemElement, ingredientID, unitID) {
+        const nutritionDiv = itemElement.querySelector('.nutritional-info');
+        if (!nutritionDiv) return;
+
+        const currentNutrition = RecipeData.data.nutritionFacts?.find(n => 
+            n.ingredientID === ingredientID && n.unitID === unitID
+        ) || { calories: 0, protein: 0, fat: 0, carbohydrates: 0 };
+
+        const inputGroup = document.createElement('div');
+        inputGroup.className = 'nutrition-editor mt-2';
+        inputGroup.innerHTML = `
+            <div class="d-flex gap-2 mb-2">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Cal</span>
+                    <input type="number" class="form-control nutrition-calories" value="${currentNutrition.calories || 0}" min="0" step="1">
+                </div>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Pro</span>
+                    <input type="number" class="form-control nutrition-protein" value="${currentNutrition.protein || 0}" min="0" step="0.1">
+                </div>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Fat</span>
+                    <input type="number" class="form-control nutrition-fat" value="${currentNutrition.fat || 0}" min="0" step="0.1">
+                </div>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Carb</span>
+                    <input type="number" class="form-control nutrition-carbs" value="${currentNutrition.carbohydrates || 0}" min="0" step="0.1">
+                </div>
+            </div>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-success save-nutrition">Save</button>
+                <button class="btn btn-secondary cancel-nutrition">Cancel</button>
+            </div>
+        `;
+
+        // Store original content
+        const originalContent = nutritionDiv.innerHTML;
+
+        // Show editor
+        nutritionDiv.innerHTML = '';
+        nutritionDiv.appendChild(inputGroup);
+
+        // Add event handlers
+        const saveBtn = inputGroup.querySelector('.save-nutrition');
+        const cancelBtn = inputGroup.querySelector('.cancel-nutrition');
+
+        saveBtn.addEventListener('click', () => {
+            const calories = parseFloat(inputGroup.querySelector('.nutrition-calories').value);
+            const protein = parseFloat(inputGroup.querySelector('.nutrition-protein').value);
+            const fat = parseFloat(inputGroup.querySelector('.nutrition-fat').value);
+            const carbs = parseFloat(inputGroup.querySelector('.nutrition-carbs').value);
+
+            if ([calories, protein, fat, carbs].some(isNaN)) {
+                alert('Please enter valid numbers for all nutritional values');
+                return;
+            }
+
+            // Update or add nutrition facts
+            const nutritionData = {
+                ingredientID,
+                unitID,
+                calories,
+                protein,
+                fat,
+                carbohydrates: carbs
+            };
+
+            if (!RecipeData.data.nutritionFacts) {
+                RecipeData.data.nutritionFacts = [];
+            }
+
+            const existingIndex = RecipeData.data.nutritionFacts.findIndex(n => 
+                n.ingredientID === ingredientID && n.unitID === unitID
+            );
+
+            if (existingIndex >= 0) {
+                RecipeData.data.nutritionFacts[existingIndex] = nutritionData;
+            } else {
+                RecipeData.data.nutritionFacts.push(nutritionData);
+            }
+
+            // Update display
+            nutritionDiv.innerHTML = this.renderNutritionalInfo(ingredientID, unitID);
+            RecipeData.updateJsonEditor();
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            nutritionDiv.innerHTML = originalContent;
         });
     }
 };

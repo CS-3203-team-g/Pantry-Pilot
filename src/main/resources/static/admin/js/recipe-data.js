@@ -447,87 +447,20 @@ const RecipeData = {
         return this.draftRecipe ? this.draftIngredientUnits : (this.data.ingredientUnits || []);
     },
 
-    addOrUpdateConversionFactor(ingredientID, unitID, conversionFactor, editingIndex = -1) {
-        ingredientID = parseInt(ingredientID);
-        unitID = parseInt(unitID);
-        conversionFactor = parseFloat(conversionFactor);
-        
-        if (isNaN(ingredientID) || isNaN(unitID) || isNaN(conversionFactor)) {
-            console.error("Invalid conversion factor parameters:", { ingredientID, unitID, conversionFactor });
-            return null;
+    addOrUpdateConversionFactor(ingredientID, unitID, conversionFactor) {
+        if (!this.data.ingredientUnits) {
+            this.data.ingredientUnits = [];
         }
         
-        const factorData = {
-            ingredientID,
-            unitID,
-            conversionFactor
-        };
+        const existingIndex = this.data.ingredientUnits.findIndex(cf => 
+            cf.ingredientID === parseInt(ingredientID) && cf.unitID === parseInt(unitID)
+        );
         
-        if (this.draftRecipe) {
-            // We're in draft mode
-            if (editingIndex >= 0 && editingIndex < this.draftIngredientUnits.length) {
-                // Update existing conversion factor
-                this.draftIngredientUnits[editingIndex] = factorData;
-            } else {
-                // Check if this ingredient/unit combination already exists in draft
-                const existingIndex = this.draftIngredientUnits.findIndex(cf => 
-                    cf.ingredientID === ingredientID && cf.unitID === unitID
-                );
-                
-                if (existingIndex >= 0) {
-                    // Update existing entry
-                    this.draftIngredientUnits[existingIndex].conversionFactor = conversionFactor;
-                } else {
-                    // Add new conversion factor
-                    this.draftIngredientUnits.push(factorData);
-                }
-            }
-        } else {
-            // Direct update mode (not using draft)
-            if (!this.data.ingredientUnits) {
-                this.data.ingredientUnits = [];
-            }
-            
-            if (editingIndex >= 0 && editingIndex < this.data.ingredientUnits.length) {
-                // Update existing conversion factor
-                this.data.ingredientUnits[editingIndex] = factorData;
-            } else {
-                // Check if this ingredient/unit combination already exists
-                const existingIndex = this.data.ingredientUnits.findIndex(cf => 
-                    cf.ingredientID === ingredientID && cf.unitID === unitID
-                );
-                
-                if (existingIndex >= 0) {
-                    // Update existing entry
-                    this.data.ingredientUnits[existingIndex].conversionFactor = conversionFactor;
-                } else {
-                    // Add new conversion factor
-                    this.data.ingredientUnits.push(factorData);
-                }
-            }
-            
-            this.updateJsonEditor();
+        if (existingIndex >= 0) {
+            this.data.ingredientUnits[existingIndex].conversionFactor = parseFloat(conversionFactor);
         }
         
-        return factorData;
-    },
-
-    removeConversionFactor(index) {
-        if (this.draftRecipe) {
-            // Remove from draft
-            if (index >= 0 && index < this.draftIngredientUnits.length) {
-                this.draftIngredientUnits.splice(index, 1);
-                return true;
-            }
-        } else {
-            // Remove from main data
-            if (index >= 0 && index < this.data.ingredientUnits.length) {
-                this.data.ingredientUnits.splice(index, 1);
-                this.updateJsonEditor();
-                return true;
-            }
-        }
-        return false;
+        this.updateJsonEditor();
     },
 
     getConversionFactor(ingredientID, unitID) {
