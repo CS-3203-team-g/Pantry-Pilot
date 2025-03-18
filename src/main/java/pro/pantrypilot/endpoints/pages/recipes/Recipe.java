@@ -9,8 +9,6 @@ import pro.pantrypilot.helpers.FileHelper;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class Recipe implements HttpHandler {
 
@@ -20,13 +18,24 @@ public class Recipe implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         byte[] responseBytes;
         try {
-            // Read the file as bytes and then convert to String with UTF-8 encoding
-            byte[] fileBytes = FileHelper.readFile("static/recipes/recipe.html");
-            String response = new String(fileBytes, StandardCharsets.UTF_8);
+            // Read all template files
+            String baseTemplate = new String(FileHelper.readFile("static/templates/recipe-base.html"), StandardCharsets.UTF_8);
+            String content = new String(FileHelper.readFile("static/templates/recipe.html"), StandardCharsets.UTF_8);
+            String modals = new String(FileHelper.readFile("static/templates/recipe-modals.html"), StandardCharsets.UTF_8);
+            String scripts = new String(FileHelper.readFile("static/templates/recipe-scripts.html"), StandardCharsets.UTF_8);
+
+            // Replace template placeholders
+            String response = baseTemplate
+                .replace("{{PAGE_TITLE}}", "Recipe Details")
+                .replace("{{PAGE_STYLES}}", "")
+                .replace("{{CONTENT}}", content)
+                .replace("{{PAGE_MODALS}}", modals)
+                .replace("{{PAGE_SCRIPTS}}", scripts);
+
             responseBytes = response.getBytes(StandardCharsets.UTF_8);
         } catch (IOException e) {
-            logger.error("Error reading recipe.html", e);
-            responseBytes = "Error: Unable to load recipe.html".getBytes(StandardCharsets.UTF_8);
+            logger.error("Error reading recipe template files", e);
+            responseBytes = "Error: Unable to load recipe templates".getBytes(StandardCharsets.UTF_8);
         }
 
         exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
