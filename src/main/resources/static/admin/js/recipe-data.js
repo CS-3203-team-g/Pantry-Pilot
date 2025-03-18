@@ -84,7 +84,6 @@ const RecipeData = {
                 unitName: unitName.trim()
             };
             this.data.units.push(newUnit);
-            console.log("getOrCreateUnit: Created new unit:", newUnit);
             this.updateJsonEditor();
             return newUnitID;
         }
@@ -169,9 +168,6 @@ const RecipeData = {
         const recipe = this.getCurrentRecipe();
         if (recipe && recipe.recipeID) {
             const ingredients = this.getIngredientsForRecipe(recipe.recipeID);
-            console.log(`[${location}] Ingredients for recipe ${recipe.recipeID} (${recipe.title}): ${ingredients.length} total`);
-            console.log("Draft mode:", !!this.draftRecipe);
-            console.log("Ingredients:", ingredients);
         }
     },
     
@@ -191,7 +187,6 @@ const RecipeData = {
             this.draftRecipeIngredients = recipeIngredients.map(
                 ing => JSON.parse(JSON.stringify(ing))
             );
-            console.log(`Started editing recipe ${currentRecipe.recipeID} with ${this.draftRecipeIngredients.length} ingredients`);
         } else {
             this.draftRecipeIngredients = [];
         }
@@ -199,7 +194,6 @@ const RecipeData = {
     
     // Cancel editing and discard draft
     cancelEditing() {
-        console.log("Canceling edit, clearing draft data");
         this.draftRecipe = null;
         this.draftRecipeIngredients = [];
     },
@@ -209,8 +203,7 @@ const RecipeData = {
         if (!this.draftRecipe || this.currentRecipeIndex === null) return;
         
         const recipeID = this.draftRecipe.recipeID;
-        console.log(`Saving recipe ${recipeID} with ${this.draftRecipeIngredients.length} ingredients`);
-        
+
         // Update the recipe
         this.data.recipes[this.currentRecipeIndex] = this.draftRecipe;
         
@@ -279,14 +272,12 @@ const RecipeData = {
         if (this.draftRecipe && this.draftRecipe.recipeID === recipe.recipeID) {
             // Add to draft ingredients
             this.draftRecipeIngredients.push(newIngredient);
-            console.log("Added ingredient to draft array, new count:", this.draftRecipeIngredients.length);
         } else {
             // Add directly to data
             if (!this.data.recipeIngredients) {
                 this.data.recipeIngredients = [];
             }
             this.data.recipeIngredients.push(newIngredient);
-            console.log("Added ingredient directly to data array");
             this.updateJsonEditor();
         }
         
@@ -308,7 +299,6 @@ const RecipeData = {
         if (this.draftRecipe && this.draftRecipe.recipeID === recipe.recipeID) {
             // Remove from draft ingredients
             this.draftRecipeIngredients.splice(index, 1);
-            console.log("Removed ingredient from draft array, new count:", this.draftRecipeIngredients.length);
         } else {
             // Remove from actual data
             const ingredientToRemove = ingredients[index];
@@ -321,7 +311,6 @@ const RecipeData = {
             
             if (globalIndex !== -1) {
                 this.data.recipeIngredients.splice(globalIndex, 1);
-                console.log("Removed ingredient directly from data array");
                 this.updateJsonEditor();
             }
         }
@@ -339,7 +328,6 @@ const RecipeData = {
 
         // Log current state before operation
         this.logIngredientsState("Before Update/Add");
-        console.log(`Editing index: ${editingIndex}`);
 
         const ingredientID = this.addOrGetIngredient(ingredientName, unitName);
         const unitID = this.getUnitIDByName(unitName);
@@ -362,17 +350,14 @@ const RecipeData = {
             // We're in draft mode (editing an existing recipe)
             if (editingIndex >= 0 && editingIndex < this.draftRecipeIngredients.length) {
                 // Update existing ingredient in draft
-                console.log(`Updating draft ingredient at index ${editingIndex}/${this.draftRecipeIngredients.length-1}`);
                 this.draftRecipeIngredients[editingIndex] = ingredientData;
             } else {
                 // Add as new ingredient to draft
-                console.log("Adding new ingredient to draft");
                 this.draftRecipeIngredients.push(ingredientData);
             }
         } else {
             // Direct update mode (not using draft) - should be rare
-            console.log("Warning: Not in draft mode when updating ingredient");
-            
+
             // Ensure recipeIngredients array exists
             if (!this.data.recipeIngredients) {
                 this.data.recipeIngredients = [];
@@ -392,15 +377,12 @@ const RecipeData = {
                 );
                 
                 if (globalIndex !== -1) {
-                    console.log(`Updating ingredient at global index ${globalIndex}`);
                     this.data.recipeIngredients[globalIndex] = ingredientData;
                 } else {
-                    console.log("Could not find ingredient to update, adding as new");
                     this.data.recipeIngredients.push(ingredientData);
                 }
             } else {
                 // Add new ingredient
-                console.log("Adding as new ingredient");
                 this.data.recipeIngredients.push(ingredientData);
             }
             
