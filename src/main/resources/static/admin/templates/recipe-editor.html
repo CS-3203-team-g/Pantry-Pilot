@@ -1,6 +1,31 @@
 <!-- Recipe Editor Section -->
 <h2 class="mb-4">Recipe Management</h2>
 
+<style>
+    .ingredient-item {
+        transition: background-color 0.2s;
+        border-radius: 4px;
+    }
+    .ingredient-item:hover {
+        background-color: #f8f9fa;
+    }
+    .ingredient-info {
+        cursor: pointer;
+        flex-grow: 1;
+        padding: 0.25rem;
+    }
+    .ingredient-info:hover {
+        background-color: #e9ecef;
+        border-radius: 4px;
+    }
+    .ingredient-actions {
+        opacity: 0.7;
+    }
+    .ingredient-actions:hover {
+        opacity: 1;
+    }
+</style>
+
 <div class="card mb-4">
     <div class="card-header bg-light">
         <h5 class="mb-0">
@@ -15,10 +40,14 @@
                 <strong>How to use the Recipe Manager:</strong>
             </p>
             <ol>
-                <li>Create a new recipe or select an existing one from the list</li>
-                <li>Edit recipe details in the editor that appears</li>
-                <li>Save your changes or cancel to discard them</li>
-                <li>Download the database backup at any time</li>
+                <li>Click <strong>Load From Database</strong> to retrieve all recipes from your server database</li>
+                <li>Create a new recipe with the <strong>New Recipe</strong> button or select an existing one from the list</li>
+                <li>Fill in the recipe details (title, image URL, rating, instructions)</li>
+                <li>Add ingredients by filling the ingredient form and clicking <strong>Save Ingredient</strong></li>
+                <li>To edit an ingredient, click on it in the ingredients list, modify the details, then click <strong>Save Ingredient</strong></li>
+                <li>When finished, click <strong>Save Recipe</strong> to store your changes or <strong>Cancel</strong> to discard them</li>
+                <li>Use <strong>Export Database</strong> to download all recipes as a JSON file</li>
+                <li>Use <strong>Import From File</strong> to load recipes from a previously exported JSON file</li>
             </ol>
         </div>
 
@@ -102,17 +131,20 @@
 
                     <!-- Ingredients Section -->
                     <div class="card mb-4">
-                        <div class="card-header bg-light">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">
                                 <i class="fas fa-carrot me-2"></i>Ingredients
                             </h6>
+                            <button type="button" id="newIngredientBtn" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-plus me-2"></i>New Ingredient
+                            </button>
                         </div>
                         <div class="card-body">
                             <div id="ingredientsList" class="mb-3">
                                 <!-- Ingredient items will be added here dynamically -->
                             </div>
 
-                            <div class="row g-3 align-items-end">
+                            <div class="row g-3 align-items-end" id="ingredientForm">
                                 <div class="col-md-4">
                                     <label for="ingredientName" class="form-label">Ingredient</label>
                                     <input type="text" class="form-control" id="ingredientName" list="existingIngredients" placeholder="Enter ingredient name">
@@ -132,10 +164,11 @@
                                     </datalist>
                                 </div>
                                 <div class="col-md-3">
-                                    <button type="button" id="addIngredientBtn" class="btn btn-primary w-100">
-                                        <i class="fas fa-plus me-2"></i>Add Ingredient
+                                    <button type="button" id="saveIngredientBtn" class="btn btn-primary w-100">
+                                        <i class="fas fa-save me-2"></i>Save Ingredient
                                     </button>
                                 </div>
+                                <input type="hidden" id="editingIngredientIndex" value="-1">
                             </div>
                         </div>
                     </div>

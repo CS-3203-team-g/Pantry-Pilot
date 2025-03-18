@@ -49,6 +49,43 @@ document.addEventListener('DOMContentLoaded', function() {
             recipeEditorModal.show();
         });
 
+        // New Ingredient Button
+        document.getElementById("newIngredientBtn")?.addEventListener("click", function() {
+            // First save the current ingredient if the form has data
+            const ingredientName = document.getElementById("ingredientName").value;
+            const quantity = parseFloat(document.getElementById("quantity").value);
+            const unitName = document.getElementById("unit").value;
+            
+            if (ingredientName && !isNaN(quantity) && unitName) {
+                RecipeData.addOrUpdateIngredientInCurrentRecipe(ingredientName, quantity, unitName);
+                RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
+                RecipeUI.renderRecipePreview(); // Update the preview
+            }
+            
+            // Then clear the form for a new ingredient
+            RecipeUI.clearIngredientForm();
+        });
+
+        // Save/Update Ingredient Button
+        document.getElementById("saveIngredientBtn")?.addEventListener("click", function() {
+            const ingredientName = document.getElementById("ingredientName").value;
+            const quantity = parseFloat(document.getElementById("quantity").value);
+            const unitName = document.getElementById("unit").value;
+            const editingIndex = parseInt(document.getElementById("editingIngredientIndex").value);
+            
+            if (!ingredientName || isNaN(quantity) || !unitName) {
+                alert("Please enter ingredient name, quantity, and unit.");
+                return;
+            }
+
+            RecipeData.addOrUpdateIngredientInCurrentRecipe(ingredientName, quantity, unitName, editingIndex);
+            
+            // Clear ingredient form and update UI
+            RecipeUI.clearIngredientForm();
+            RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
+            RecipeUI.renderRecipePreview(); // Update the preview
+        });
+
         // Save Recipe Button
         document.getElementById("saveRecipeBtn")?.addEventListener("click", function() {
             const recipe = RecipeData.getCurrentRecipe();
@@ -64,6 +101,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 rating: parseFloat(document.getElementById("rating").value) || null
             });
             
+            // Save the draft to actual data
+            RecipeData.saveEdits();
             RecipeUI.renderRecipePreview();
             
             // Close the modal
@@ -97,6 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update UI
             RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
+            RecipeUI.renderRecipePreview(); // Add this line to update the preview
         });
 
         // Load JSON from File
@@ -184,8 +224,76 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
+        // Add modal open handler to start editing
+        const recipeEditorModal = document.getElementById('recipeEditorModal');
+        if (recipeEditorModal) {
+            recipeEditorModal.addEventListener('show.bs.modal', function () {
+                // Start editing when the modal opens
+                if (RecipeData.currentRecipeIndex !== null && !RecipeData.draftRecipe) {
+                    RecipeData.startEditing();
+                }
+                
+                RecipeUI.updateIngredientDatalist();
+                RecipeUI.updateUnitSuggestions();
+                RecipeUI.renderRecipePreview();
+            });
+            
+            // Add event listener for modal close - cancel editing
+            recipeEditorModal.addEventListener('hide.bs.modal', function(event) {
+                // Cancel button clicked - discard changes
+                if (event.target.classList.contains('btn-close') || 
+                    event.relatedTarget?.classList.contains('btn-secondary')) {
+                    RecipeData.cancelEditing();
+                }
+            });
+            
+            // Modal hidden event - ensure draft is canceled and backdrop removed
+            recipeEditorModal.addEventListener('hidden.bs.modal', function() {
+                RecipeData.cancelEditing();
+                
+                // Fix for stuck backdrop
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.parentNode.removeChild(backdrop);
+                }
+                
+                // Additional fix - ensure body can scroll again
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            });
+        }
+
         // Initialize UI components
         RecipeUI.updateIngredientDatalist();
         RecipeUI.populateMainRecipeList();
+        
+        // Add explicit event listener for cancel button
+        document.querySelector('.modal-footer .btn-secondary')?.addEventListener('click', function() {
+            RecipeData.cancelEditing();
+            
+            // Also ensure modal backdrop is removed when cancel is clicked
+            const modalElement = document.getElementById('recipeEditorModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) {
+                modalInstance.hide();
+                
+                // Give time for the modal to hide, then force cleanup
+                setTimeout(() => {
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.parentNode.removeChild(backdrop);
+                    }
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                }, 150);
+            }
+        });
+        
+        // Also handle the X button explicitly
+        document.querySelector('.modal-header .btn-close')?.addEventListener('click', function() {
+            RecipeData.cancelEditing();
+        });
     }
 });

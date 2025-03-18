@@ -52,43 +52,93 @@ const RecipeUI = {
     },
 
     // Recipe form management
+    clearIngredientForm() {
+        document.getElementById("ingredientName").value = '';
+        document.getElementById("quantity").value = '';
+        document.getElementById("unit").value = '';
+        document.getElementById("editingIngredientIndex").value = '-1';
+    },
+
+    loadIngredientIntoForm(ingredient, index) {
+        const ingredientObj = RecipeData.data.ingredients.find(i => i.ingredientID === ingredient.ingredientID);
+        document.getElementById("ingredientName").value = ingredientObj?.ingredientName || '';
+        document.getElementById("quantity").value = ingredient.quantity || '';
+        document.getElementById("unit").value = ingredient.unitName || '';
+        document.getElementById("editingIngredientIndex").value = index;
+    },
+
     loadRecipeIntoForm(recipe) {
+        if (!recipe) return;
+        
         document.getElementById("recipeTitle").value = recipe.title || '';
         document.getElementById("instructions").value = recipe.instructions || '';
         document.getElementById("thumbnailUrl").value = recipe.thumbnailUrl || '';
         document.getElementById("rating").value = recipe.rating || '';
         
+        // Clear the ingredient form
+        this.clearIngredientForm();
+        
+        // Render the ingredients list and preview
+        this.renderIngredientsList(recipe);
+        this.renderRecipePreview();
+        
+        // Update ingredient suggestions
+        this.updateIngredientDatalist();
+    },
+
+    renderIngredientsList(recipe) {
         const ingredientsList = document.getElementById("ingredientsList");
         ingredientsList.innerHTML = '';
         
-        if (recipe.ingredients && recipe.ingredients.length > 0) {
-            recipe.ingredients.forEach((ing, idx) => {
-                let ingredientObj = RecipeData.data.ingredients.find(i => i.ingredientID === ing.ingredientID);
-                let ingredientName = ingredientObj ? ingredientObj.ingredientName : "Unknown Ingredient";
-                
-                const ingItem = document.createElement("div");
-                ingItem.className = "mb-2 p-2 border-bottom d-flex justify-content-between align-items-center";
-                ingItem.innerHTML = `
-                    <div>
-                        <strong>${ing.quantity} ${ing.unitName || ''}</strong> of ${ingredientName}
-                    </div>
+        if (!recipe || !recipe.recipeID) return;
+        
+        // Get ingredients for this recipe from recipeIngredients array
+        const ingredients = RecipeData.getIngredientsForRecipe(recipe.recipeID);
+        
+        ingredients.forEach((ing, idx) => {
+            let ingredientObj = RecipeData.data.ingredients.find(i => i.ingredientID === ing.ingredientID);
+            let ingredientName = ingredientObj ? ingredientObj.ingredientName : "Unknown Ingredient";
+            
+            const ingItem = document.createElement("div");
+            ingItem.className = "mb-2 p-2 border-bottom d-flex justify-content-between align-items-center ingredient-item";
+            ingItem.innerHTML = `
+                <div class="ingredient-info" data-index="${idx}">
+                    <strong>${ing.quantity} ${ing.unitName || ''}</strong> of ${ingredientName}
+                </div>
+                <div class="ingredient-actions">
                     <button type="button" class="btn btn-sm btn-outline-danger remove-ingredient" data-index="${idx}">
                         <i class="fas fa-trash"></i>
                     </button>
-                `;
-                ingredientsList.appendChild(ingItem);
-            });
+                </div>
+            `;
             
-            document.querySelectorAll('.remove-ingredient').forEach(button => {
-                button.addEventListener('click', function() {
-                    const idx = parseInt(this.getAttribute('data-index'));
-                    RecipeData.removeIngredientFromCurrentRecipe(idx);
-                    RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
-                });
+            // Properly set up click-to-edit functionality
+            const infoDiv = ingItem.querySelector('.ingredient-info');
+            infoDiv.addEventListener('click', () => {
+                document.getElementById("ingredientName").value = ingredientName;
+                document.getElementById("quantity").value = ing.quantity;
+                document.getElementById("unit").value = ing.unitName || '';
+                document.getElementById("editingIngredientIndex").value = idx;
+                
+                // Trigger unit suggestions update immediately
+                this.updateUnitSuggestions();
+                this.renderRecipePreview();
             });
-        }
-        
-        this.renderRecipePreview();
+
+            // Add delete functionality
+            const deleteBtn = ingItem.querySelector('.remove-ingredient');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const index = parseInt(e.currentTarget.getAttribute('data-index'));
+                if (index === parseInt(document.getElementById("editingIngredientIndex").value)) {
+                    this.clearIngredientForm();
+                }
+                RecipeData.removeIngredientFromCurrentRecipe(index);
+                this.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
+            });
+
+            ingredientsList.appendChild(ingItem);
+        });
     },
 
     clearForm() {
@@ -130,11 +180,11 @@ const RecipeUI = {
     },
 
     generateIngredientsHtml(recipe) {
-        let ingredientList = recipe.ingredients || [];
-        if (recipe.recipeID && RecipeData.data.recipeIngredients) {
-            ingredientList = RecipeData.data.recipeIngredients.filter(ri => ri.recipeID === recipe.recipeID);
-        }
-
+        if (!recipe || !recipe.recipeID) return '';
+        
+        // Get ingredients for this recipe from recipeIngredients array
+        const ingredientList = RecipeData.getIngredientsForRecipe(recipe.recipeID);
+        
         if (ingredientList.length === 0) return '';
 
         let html = '<div class="mt-3"><h6>Ingredients:</h6><div class="ingredients-list">';
