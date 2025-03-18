@@ -12,6 +12,7 @@ const RecipeData = {
     // Store a draft copy of the current recipe and its ingredients when editing
     draftRecipe: null,
     draftRecipeIngredients: [],
+    draftIngredientUnits: [],
 
     updateJsonEditor() {
         document.getElementById("jsonEditor").value = JSON.stringify(this.data, null, 2);
@@ -55,9 +56,15 @@ const RecipeData = {
             });
         }
         
+        // Ensure ingredientUnits array exists
+        if (!this.data.ingredientUnits) {
+            this.data.ingredientUnits = [];
+        }
+        
         this.currentRecipeIndex = null;
         this.draftRecipe = null;
         this.draftRecipeIngredients = [];
+        this.draftIngredientUnits = [];
         this.updateJsonEditor();
     },
 
@@ -66,6 +73,14 @@ const RecipeData = {
         if (!unitName) return null;
         const unit = this.data.units.find(u => u.unitName === unitName);
         return unit ? unit.unitID : null;
+    },
+
+    // Helper to get ingredient by name
+    getIngredientByName(ingredientName) {
+        if (!ingredientName) return null;
+        return this.data.ingredients.find(i => 
+            i.ingredientName && i.ingredientName.trim().toLowerCase() === ingredientName.trim().toLowerCase()
+        );
     },
 
     // Unit management
@@ -104,11 +119,7 @@ const RecipeData = {
                 mapping.ingredientID === existingIngredient.ingredientID && mapping.unitID === unitID
             );
             if (!mappingExists) {
-                this.data.ingredientUnits.push({
-                    ingredientID: existingIngredient.ingredientID,
-                    unitID: unitID,
-                    conversionFactor: 1
-                });
+                this.addOrUpdateConversionFactor(existingIngredient.ingredientID, unitID, 1);
             }
             this.updateJsonEditor();
             return existingIngredient.ingredientID;
@@ -122,11 +133,7 @@ const RecipeData = {
             };
             this.data.ingredients.push(newIngredient);
             if (!this.data.ingredientUnits) { this.data.ingredientUnits = []; }
-            this.data.ingredientUnits.push({
-                ingredientID: newIngredientID,
-                unitID: unitID,
-                conversionFactor: 1
-            });
+            this.addOrUpdateConversionFactor(newIngredientID, unitID, 1);
             this.updateJsonEditor();
             return newIngredientID;
         }
@@ -150,7 +157,7 @@ const RecipeData = {
         this.updateJsonEditor();
         return newRecipe;
     },
-    
+
     getNextRecipeID() {
         return this.data.recipes.length > 0 ? Math.max(...this.data.recipes.map(r => r.recipeID || 0)) + 1 : 1;
     },
@@ -187,8 +194,20 @@ const RecipeData = {
             this.draftRecipeIngredients = recipeIngredients.map(
                 ing => JSON.parse(JSON.stringify(ing))
             );
+            
+            // Make a copy of ingredientUnits for all ingredients in this recipe
+            const ingredientIDs = new Set(
+                this.draftRecipeIngredients.map(ri => ri.ingredientID)
+            );
+            const relevantIngredientUnits = this.data.ingredientUnits.filter(
+                iu => ingredientIDs.has(iu.ingredientID)
+            );
+            this.draftIngredientUnits = relevantIngredientUnits.map(
+                iu => JSON.parse(JSON.stringify(iu))
+            );
         } else {
             this.draftRecipeIngredients = [];
+            this.draftIngredientUnits = [];
         }
     },
     
@@ -196,6 +215,7 @@ const RecipeData = {
     cancelEditing() {
         this.draftRecipe = null;
         this.draftRecipeIngredients = [];
+        this.draftIngredientUnits = [];
     },
     
     // Save edits to the actual data
@@ -217,13 +237,39 @@ const RecipeData = {
             this.draftRecipeIngredients.forEach(ing => {
                 this.data.recipeIngredients.push(ing);
             });
+            
+            // Update conversion factors
+            this.syncDraftConversionFactors();
         }
         
         // Clear drafts
         this.draftRecipe = null;
         this.draftRecipeIngredients = [];
+        this.draftIngredientUnits = [];
         
         this.updateJsonEditor();
+    },
+
+    // Synchronize draft conversion factors with the main data
+    syncDraftConversionFactors() {
+        if (this.draftIngredientUnits.length === 0) return;
+        
+        // For each draft conversion factor
+        this.draftIngredientUnits.forEach(draftCF => {
+            // Find matching conversion factor in the main data
+            const existingIndex = this.data.ingredientUnits.findIndex(cf => 
+                cf.ingredientID === draftCF.ingredientID && 
+                cf.unitID === draftCF.unitID
+            );
+            
+            if (existingIndex >= 0) {
+                // Update existing conversion factor
+                this.data.ingredientUnits[existingIndex] = draftCF;
+            } else {
+                // Add new conversion factor
+                this.data.ingredientUnits.push(draftCF);
+            }
+        });
     },
 
     updateCurrentRecipe(recipeData) {
@@ -393,6 +439,107 @@ const RecipeData = {
         this.logIngredientsState("After Update/Add");
         
         return ingredientData;
+    },
+
+    // Conversion Factor Management
+    getConversionFactors() {
+        // Return draft conversion factors if in draft mode, otherwise return from main data
+        return this.draftRecipe ? this.draftIngredientUnits : (this.data.ingredientUnits || []);
+    },
+
+    addOrUpdateConversionFactor(ingredientID, unitID, conversionFactor, editingIndex = -1) {
+        ingredientID = parseInt(ingredientID);
+        unitID = parseInt(unitID);
+        conversionFactor = parseFloat(conversionFactor);
+        
+        if (isNaN(ingredientID) || isNaN(unitID) || isNaN(conversionFactor)) {
+            console.error("Invalid conversion factor parameters:", { ingredientID, unitID, conversionFactor });
+            return null;
+        }
+        
+        const factorData = {
+            ingredientID,
+            unitID,
+            conversionFactor
+        };
+        
+        if (this.draftRecipe) {
+            // We're in draft mode
+            if (editingIndex >= 0 && editingIndex < this.draftIngredientUnits.length) {
+                // Update existing conversion factor
+                this.draftIngredientUnits[editingIndex] = factorData;
+            } else {
+                // Check if this ingredient/unit combination already exists in draft
+                const existingIndex = this.draftIngredientUnits.findIndex(cf => 
+                    cf.ingredientID === ingredientID && cf.unitID === unitID
+                );
+                
+                if (existingIndex >= 0) {
+                    // Update existing entry
+                    this.draftIngredientUnits[existingIndex].conversionFactor = conversionFactor;
+                } else {
+                    // Add new conversion factor
+                    this.draftIngredientUnits.push(factorData);
+                }
+            }
+        } else {
+            // Direct update mode (not using draft)
+            if (!this.data.ingredientUnits) {
+                this.data.ingredientUnits = [];
+            }
+            
+            if (editingIndex >= 0 && editingIndex < this.data.ingredientUnits.length) {
+                // Update existing conversion factor
+                this.data.ingredientUnits[editingIndex] = factorData;
+            } else {
+                // Check if this ingredient/unit combination already exists
+                const existingIndex = this.data.ingredientUnits.findIndex(cf => 
+                    cf.ingredientID === ingredientID && cf.unitID === unitID
+                );
+                
+                if (existingIndex >= 0) {
+                    // Update existing entry
+                    this.data.ingredientUnits[existingIndex].conversionFactor = conversionFactor;
+                } else {
+                    // Add new conversion factor
+                    this.data.ingredientUnits.push(factorData);
+                }
+            }
+            
+            this.updateJsonEditor();
+        }
+        
+        return factorData;
+    },
+
+    removeConversionFactor(index) {
+        if (this.draftRecipe) {
+            // Remove from draft
+            if (index >= 0 && index < this.draftIngredientUnits.length) {
+                this.draftIngredientUnits.splice(index, 1);
+                return true;
+            }
+        } else {
+            // Remove from main data
+            if (index >= 0 && index < this.data.ingredientUnits.length) {
+                this.data.ingredientUnits.splice(index, 1);
+                this.updateJsonEditor();
+                return true;
+            }
+        }
+        return false;
+    },
+
+    getConversionFactor(ingredientID, unitID) {
+        ingredientID = parseInt(ingredientID);
+        unitID = parseInt(unitID);
+        
+        const conversionFactors = this.getConversionFactors();
+        const factor = conversionFactors.find(cf => 
+            cf.ingredientID === ingredientID && cf.unitID === unitID
+        );
+        
+        return factor ? factor.conversionFactor : 1; // Default to 1 if not found
     }
 };
 

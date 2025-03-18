@@ -36,6 +36,18 @@
     .ingredient-btn-group .btn:not(.dropdown-toggle-split) {
         flex: 1;
     }
+    
+    /* Conversion factor styling */
+    .conversion-factor-item {
+        transition: background-color 0.2s;
+        border-radius: 4px;
+        padding: 0.5rem;
+        border-bottom: 1px solid #e9ecef;
+        margin-bottom: 0.5rem;
+    }
+    .conversion-factor-item:hover {
+        background-color: #f8f9fa;
+    }
 </style>
 
 <div class="card mb-4">
@@ -62,6 +74,7 @@
                     </ul>
                 </li>
                 <li>To edit an ingredient, click on it in the ingredients list, modify the details, then save it</li>
+                <li>Use the <strong>Conversion Factors</strong> section to set conversion values between different units for ingredients</li>
                 <li>When finished, click <strong>Save Recipe</strong> to store your changes or <strong>Cancel</strong> to discard them</li>
                 <li>Use <strong>Export Database</strong> to download all recipes as a JSON file</li>
                 <li>Use <strong>Import From File</strong> to load recipes from a previously exported JSON file</li>
@@ -197,6 +210,63 @@
                         </div>
                     </div>
 
+                    <!-- Conversion Factors Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-exchange-alt me-2"></i>Conversion Factors
+                            </h6>
+                            <button type="button" id="addConversionFactorBtn" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-plus"></i> Add Conversion
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Conversion factors define how to convert between different units for the same ingredient.
+                            </div>
+                            
+                            <div id="conversionFactorsList" class="mb-3">
+                                <!-- Conversion factor items will be added here dynamically -->
+                                <div id="emptyConversionFactorsMessage" class="alert alert-light">
+                                    No conversion factors defined yet. Click "Add Conversion" to create one.
+                                </div>
+                            </div>
+
+                            <div class="row g-3 align-items-end" id="conversionFactorForm" style="display: none;">
+                                <div class="col-md-3">
+                                    <label for="cfIngredientSelect" class="form-label">Ingredient</label>
+                                    <select class="form-select" id="cfIngredientSelect">
+                                        <option value="" selected disabled>Select ingredient</option>
+                                        <!-- Ingredients will be populated dynamically -->
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="cfUnitSelect" class="form-label">Unit</label>
+                                    <select class="form-select" id="cfUnitSelect">
+                                        <option value="" selected disabled>Select unit</option>
+                                        <!-- Units will be populated dynamically -->
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="cfConversionFactor" class="form-label">Conversion Factor</label>
+                                    <input type="number" class="form-control" id="cfConversionFactor" min="0.001" step="0.001" placeholder="Enter factor">
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="btn-group w-100">
+                                        <button type="button" id="saveConversionFactorBtn" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>Save
+                                        </button>
+                                        <button type="button" id="cancelConversionFactorBtn" class="btn btn-light">
+                                            <i class="fas fa-times me-2"></i>Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="editingConversionFactorIndex" value="-1">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Recipe Preview -->
                     <div class="card">
                         <div class="card-header bg-light">
@@ -253,6 +323,10 @@
 
 <!-- Load JavaScript modules in the correct order -->
 <script src="/admin/js/recipe-data.js"></script>
+<script src="/admin/js/recipe-ui-core.js"></script>
+<script src="/admin/js/recipe-ingredients-ui.js"></script>
+<script src="/admin/js/recipe-conversion-ui.js"></script>
+<script src="/admin/js/recipe-render.js"></script>
 <script src="/admin/js/recipe-ui.js"></script>
 <script src="/admin/js/recipe-io.js"></script>
 <script src="/admin/js/recipe-form-handlers.js"></script>

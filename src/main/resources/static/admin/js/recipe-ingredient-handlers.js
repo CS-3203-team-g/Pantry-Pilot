@@ -1,7 +1,7 @@
 const RecipeIngredientHandlers = {
     initIngredientHandlers() {
-        document.getElementById("ingredientName")?.addEventListener("input", () => RecipeUI.updateUnitSuggestions());
-        document.getElementById("ingredientName")?.addEventListener("blur", () => RecipeUI.updateUnitSuggestions());
+        document.getElementById("ingredientName")?.addEventListener("input", () => RecipeIngredientsUI.updateUnitSuggestions());
+        document.getElementById("ingredientName")?.addEventListener("blur", () => RecipeIngredientsUI.updateUnitSuggestions());
 
         // Save/Update Ingredient Button
         const saveBtn = document.getElementById("saveIngredientBtn");
@@ -40,8 +40,8 @@ const RecipeIngredientHandlers = {
                     );
                     
                     RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
-                    RecipeUI.renderRecipePreview();
-                    RecipeUI.clearIngredientForm();
+                    RecipeRenderUI.renderRecipePreview();
+                    RecipeIngredientsUI.clearIngredientForm();
                 } finally {
                     this.dataset.processing = 'false';
                 }
@@ -59,10 +59,10 @@ const RecipeIngredientHandlers = {
             if (ingredientName && !isNaN(quantity) && unitName) {
                 RecipeData.addOrUpdateIngredientInCurrentRecipe(ingredientName, quantity, unitName);
                 RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
-                RecipeUI.renderRecipePreview();
+                RecipeRenderUI.renderRecipePreview();
             }
             
-            RecipeUI.clearIngredientForm();
+            RecipeIngredientsUI.clearIngredientForm();
         });
 
         // Save & New Ingredient Button
@@ -81,7 +81,7 @@ const RecipeIngredientHandlers = {
             
             document.getElementById("editingIngredientIndex").value = "-1";
             RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
-            RecipeUI.renderRecipePreview();
+            RecipeRenderUI.renderRecipePreview();
             
             document.getElementById("ingredientName").value = '';
             document.getElementById("ingredientName").focus();
@@ -106,8 +106,72 @@ const RecipeIngredientHandlers = {
             document.getElementById("unit").value = '';
             
             RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
-            RecipeUI.renderRecipePreview();
+            RecipeRenderUI.renderRecipePreview();
         });
+
+        // Initialize conversion factor handlers
+        this.initConversionFactorHandlers();
+    },
+
+    // Conversion Factor Handlers
+    initConversionFactorHandlers() {
+        // Show conversion factor form button
+        document.getElementById("addConversionFactorBtn")?.addEventListener("click", function() {
+            RecipeConversionUI.showConversionFactorForm();
+        });
+
+        // Cancel conversion factor button
+        document.getElementById("cancelConversionFactorBtn")?.addEventListener("click", function() {
+            RecipeConversionUI.hideConversionFactorForm();
+        });
+
+        // Ingredient select change - populate units dropdown
+        document.getElementById("cfIngredientSelect")?.addEventListener("change", function() {
+            const ingredientID = this.value;
+            if (ingredientID) {
+                RecipeConversionUI.populateUnitsDropdown(ingredientID);
+            } else {
+                // Clear units if no ingredient selected
+                const unitSelect = document.getElementById("cfUnitSelect");
+                while (unitSelect.options.length > 1) {
+                    unitSelect.remove(1);
+                }
+            }
+        });
+
+        // Save conversion factor button
+        document.getElementById("saveConversionFactorBtn")?.addEventListener("click", function() {
+            const ingredientID = document.getElementById("cfIngredientSelect").value;
+            const unitID = document.getElementById("cfUnitSelect").value;
+            const conversionFactor = document.getElementById("cfConversionFactor").value;
+            const editingIndex = parseInt(document.getElementById("editingConversionFactorIndex").value);
+            
+            if (!ingredientID || !unitID || !conversionFactor) {
+                alert("Please select an ingredient, unit, and enter a conversion factor.");
+                return;
+            }
+            
+            const parsedFactor = parseFloat(conversionFactor);
+            if (isNaN(parsedFactor) || parsedFactor <= 0) {
+                alert("Please enter a valid positive number for the conversion factor.");
+                return;
+            }
+            
+            // Add or update the conversion factor
+            RecipeData.addOrUpdateConversionFactor(
+                ingredientID,
+                unitID,
+                parsedFactor,
+                editingIndex >= 0 ? editingIndex : -1
+            );
+            
+            // Hide the form and refresh the list
+            RecipeConversionUI.hideConversionFactorForm();
+            RecipeConversionUI.renderConversionFactorsList();
+        });
+        
+        // Initially render the conversion factors list
+        RecipeConversionUI.renderConversionFactorsList();
     }
 };
 

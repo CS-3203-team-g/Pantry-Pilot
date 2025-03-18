@@ -13,9 +13,9 @@ const RecipeIOHandlers = {
             try {
                 const jsonData = await RecipeIO.loadFromFile(file);
                 RecipeData.loadFromJson(jsonData);
-                RecipeUI.renderRecipePreview();
-                RecipeUI.updateIngredientDatalist();
-                RecipeUI.populateMainRecipeList();
+                RecipeRenderUI.renderRecipePreview();
+                RecipeIngredientsUI.updateIngredientDatalist();
+                RecipeRenderUI.populateMainRecipeList();
             } catch (error) {
                 alert(error.message);
             }
@@ -26,9 +26,9 @@ const RecipeIOHandlers = {
             try {
                 const data = await RecipeIO.loadFromDatabase();
                 RecipeData.loadFromJson(data);
-                RecipeUI.renderRecipePreview();
-                RecipeUI.updateIngredientDatalist();
-                RecipeUI.populateMainRecipeList();
+                RecipeRenderUI.renderRecipePreview();
+                RecipeIngredientsUI.updateIngredientDatalist();
+                RecipeRenderUI.populateMainRecipeList();
             } catch (error) {
                 alert(error.message);
             }
@@ -39,8 +39,8 @@ const RecipeIOHandlers = {
             try {
                 const jsonData = JSON.parse(document.getElementById("jsonEditor").value);
                 RecipeData.loadFromJson(jsonData);
-                RecipeUI.renderRecipePreview();
-                RecipeUI.populateMainRecipeList();
+                RecipeRenderUI.renderRecipePreview();
+                RecipeRenderUI.populateMainRecipeList();
             } catch (error) {
                 alert("Invalid JSON: " + error.message);
             }

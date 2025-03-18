@@ -4,7 +4,7 @@ const RecipeFormHandlers = {
     initRecipeFormHandlers() {
         // New Recipe Button
         document.getElementById("newRecipeBtn")?.addEventListener("click", function() {
-            RecipeUI.clearForm();
+            RecipeUICore.clearForm();
             const newRecipe = RecipeData.createNewRecipe();
             const recipeEditorModal = new bootstrap.Modal(document.getElementById('recipeEditorModal'));
             recipeEditorModal.show();
@@ -27,7 +27,7 @@ const RecipeFormHandlers = {
             
             // Save the draft to actual data
             RecipeData.saveEdits();
-            RecipeUI.renderRecipePreview();
+            RecipeRenderUI.renderRecipePreview();
             
             // Close the modal
             const modalElement = document.getElementById('recipeEditorModal');
@@ -36,7 +36,7 @@ const RecipeFormHandlers = {
                 modalInstance.hide();
             }
             
-            RecipeUI.populateMainRecipeList();
+            RecipeRenderUI.populateMainRecipeList();
         });
 
         // Setup modal events
@@ -53,7 +53,7 @@ const RecipeFormHandlers = {
                         thumbnailUrl: document.getElementById("thumbnailUrl").value,
                         rating: parseFloat(document.getElementById("rating").value) || null
                     });
-                    RecipeUI.renderRecipePreview();
+                    RecipeRenderUI.renderRecipePreview();
                 }
             });
         });
@@ -70,9 +70,9 @@ const RecipeFormHandlers = {
                     RecipeData.startEditing();
                 }
                 
-                RecipeUI.updateIngredientDatalist();
-                RecipeUI.updateUnitSuggestions();
-                RecipeUI.renderRecipePreview();
+                RecipeIngredientsUI.updateIngredientDatalist();
+                RecipeIngredientsUI.updateUnitSuggestions();
+                RecipeRenderUI.renderRecipePreview();
             });
             
             // Add event listener for modal close - cancel editing

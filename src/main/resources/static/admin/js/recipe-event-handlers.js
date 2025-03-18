@@ -14,8 +14,8 @@ const RecipeEventHandlers = {
         RecipeIOHandlers.initIOHandlers();
         
         // Initialize UI components
-        RecipeUI.updateIngredientDatalist();
-        RecipeUI.populateMainRecipeList();
+        RecipeIngredientsUI.updateIngredientDatalist();
+        RecipeRenderUI.populateMainRecipeList();
     }
 };
 
