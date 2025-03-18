@@ -24,6 +24,18 @@
     .ingredient-actions:hover {
         opacity: 1;
     }
+
+    /* Custom styling for the ingredient button group */
+    .ingredient-btn-group .dropdown-toggle-split {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        width: auto !important;
+        flex: 0 0 auto;
+    }
+    
+    .ingredient-btn-group .btn:not(.dropdown-toggle-split) {
+        flex: 1;
+    }
 </style>
 
 <div class="card mb-4">
@@ -43,8 +55,13 @@
                 <li>Click <strong>Load From Database</strong> to retrieve all recipes from your server database</li>
                 <li>Create a new recipe with the <strong>New Recipe</strong> button or select an existing one from the list</li>
                 <li>Fill in the recipe details (title, image URL, rating, instructions)</li>
-                <li>Add ingredients by filling the ingredient form and clicking <strong>Save Ingredient</strong></li>
-                <li>To edit an ingredient, click on it in the ingredients list, modify the details, then click <strong>Save Ingredient</strong></li>
+                <li>Add ingredients by filling the ingredient form and clicking:
+                    <ul>
+                        <li><strong>Save</strong> to save and clear the form</li>
+                        <li><strong>Save & New</strong> to save and immediately start a new ingredient</li>
+                    </ul>
+                </li>
+                <li>To edit an ingredient, click on it in the ingredients list, modify the details, then save it</li>
                 <li>When finished, click <strong>Save Recipe</strong> to store your changes or <strong>Cancel</strong> to discard them</li>
                 <li>Use <strong>Export Database</strong> to download all recipes as a JSON file</li>
                 <li>Use <strong>Import From File</strong> to load recipes from a previously exported JSON file</li>
@@ -135,9 +152,6 @@
                             <h6 class="mb-0">
                                 <i class="fas fa-carrot me-2"></i>Ingredients
                             </h6>
-                            <button type="button" id="newIngredientBtn" class="btn btn-outline-success btn-sm">
-                                <i class="fas fa-plus me-2"></i>New Ingredient
-                            </button>
                         </div>
                         <div class="card-body">
                             <div id="ingredientsList" class="mb-3">
@@ -164,9 +178,19 @@
                                     </datalist>
                                 </div>
                                 <div class="col-md-3">
-                                    <button type="button" id="saveIngredientBtn" class="btn btn-primary w-100">
-                                        <i class="fas fa-save me-2"></i>Save Ingredient
-                                    </button>
+                                    <div class="btn-group w-100 ingredient-btn-group">
+                                        <button type="button" id="saveIngredientBtn" class="btn btn-success">
+                                            <i class="fas fa-save me-2"></i>Save
+                                        </button>
+                                        <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <span class="visually-hidden">Toggle Dropdown</span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="#" id="saveAndNewIngredientBtn">
+                                                <i class="fas fa-plus me-2"></i>Save & New
+                                            </a></li>
+                                        </ul>
+                                    </div>
                                 </div>
                                 <input type="hidden" id="editingIngredientIndex" value="-1">
                             </div>

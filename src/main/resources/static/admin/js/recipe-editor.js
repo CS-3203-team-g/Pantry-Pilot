@@ -85,6 +85,30 @@ document.addEventListener('DOMContentLoaded', function() {
             RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
             RecipeUI.renderRecipePreview(); // Update the preview
         });
+        
+        // Save & New Ingredient Button
+        document.getElementById("saveAndNewIngredientBtn")?.addEventListener("click", function() {
+            const ingredientName = document.getElementById("ingredientName").value;
+            const quantity = parseFloat(document.getElementById("quantity").value);
+            const unitName = document.getElementById("unit").value;
+            const editingIndex = parseInt(document.getElementById("editingIngredientIndex").value);
+            
+            if (!ingredientName || isNaN(quantity) || !unitName) {
+                alert("Please enter ingredient name, quantity, and unit.");
+                return;
+            }
+
+            RecipeData.addOrUpdateIngredientInCurrentRecipe(ingredientName, quantity, unitName, editingIndex);
+            
+            // Update UI without clearing form - just reset the editing index and update the list
+            document.getElementById("editingIngredientIndex").value = "-1";
+            RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
+            RecipeUI.renderRecipePreview(); // Update the preview
+            
+            // Focus on the ingredient name field for quick entry
+            document.getElementById("ingredientName").value = '';
+            document.getElementById("ingredientName").focus();
+        });
 
         // Save Recipe Button
         document.getElementById("saveRecipeBtn")?.addEventListener("click", function() {
