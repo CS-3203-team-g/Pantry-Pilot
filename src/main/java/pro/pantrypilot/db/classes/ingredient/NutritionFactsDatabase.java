@@ -282,26 +282,79 @@ public class NutritionFactsDatabase {
      */
     public static NutritionFacts calculateRecipeNutrition(int recipeID) {
         Connection connection = DatabaseConnectionManager.getConnection();
-        String sql = "SELECT " +
-                "r.recipeID, " +
-                "r.title, " +
-                "COALESCE(SUM(((ri.quantity * COALESCE(iu.conversionFactor, 1)) / 100) * COALESCE(nf.calories, 0)), 0) AS total_calories, " +
-                "COALESCE(SUM(((ri.quantity * COALESCE(iu.conversionFactor, 1)) / 100) * COALESCE(nf.fat, 0)), 0) AS total_fat, " +
-                "COALESCE(SUM(((ri.quantity * COALESCE(iu.conversionFactor, 1)) / 100) * COALESCE(nf.carbohydrates, 0)), 0) AS total_carbohydrates, " +
-                "COALESCE(SUM(((ri.quantity * COALESCE(iu.conversionFactor, 1)) / 100) * COALESCE(nf.protein, 0)), 0) AS total_protein " +
-                "FROM recipes AS r " +
-                "LEFT JOIN recipe_ingredients AS ri " +
-                "    ON r.recipeID = ri.recipeID " +
-                "LEFT JOIN ingredients AS i " +
-                "    ON ri.ingredientID = i.id " +
-                "LEFT JOIN ingredient_units AS iu " +
-                "    ON ri.ingredientID = iu.ingredientID " +
-                "        AND iu.unitID = i.default_unit_id " +
-                "LEFT JOIN nutrition_facts AS nf " +
-                "    ON ri.ingredientID = nf.ingredientID " +
-                "        AND nf.unitID = i.default_unit_id " +
-                "WHERE r.recipeID = ? " +
-                "GROUP BY r.recipeID, r.title";
+        String sql = "SELECT recipeID, title, " +
+                "SUM(total_calories) AS total_calories, " +
+                "SUM(total_fat) AS total_fat, " +
+                "SUM(total_carbohydrates) AS total_carbohydrates, " +
+                "SUM(total_protein) AS total_protein " +
+                "FROM ( " +
+                "    SELECT r.recipeID, r.title, " +
+                "    ((ri.quantity * " +
+                "      COALESCE( " +
+                "         (SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
+                "           WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
+                "         (SELECT iu2.conversionFactor FROM ingredient_units iu2 " +
+                "           WHERE iu2.ingredientID = ri.ingredientID AND iu2.unitID = i.default_unit_id), " +
+                "         1 " +
+                "      )) / 100) * " +
+                "      COALESCE( " +
+                "         (SELECT nf1.calories FROM nutrition_facts nf1 " +
+                "           WHERE nf1.ingredientID = ri.ingredientID AND nf1.unitID = ri.unitID), " +
+                "         (SELECT nf2.calories FROM nutrition_facts nf2 " +
+                "           WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
+                "         0 " +
+                "      ) AS total_calories, " +
+                "    ((ri.quantity * " +
+                "      COALESCE( " +
+                "         (SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
+                "           WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
+                "         (SELECT iu2.conversionFactor FROM ingredient_units iu2 " +
+                "           WHERE iu2.ingredientID = ri.ingredientID AND iu2.unitID = i.default_unit_id), " +
+                "         1 " +
+                "      )) / 100) * " +
+                "      COALESCE( " +
+                "         (SELECT nf1.fat FROM nutrition_facts nf1 " +
+                "           WHERE nf1.ingredientID = ri.ingredientID AND nf1.unitID = ri.unitID), " +
+                "         (SELECT nf2.fat FROM nutrition_facts nf2 " +
+                "           WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
+                "         0 " +
+                "      ) AS total_fat, " +
+                "    ((ri.quantity * " +
+                "      COALESCE( " +
+                "         (SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
+                "           WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
+                "         (SELECT iu2.conversionFactor FROM ingredient_units iu2 " +
+                "           WHERE iu2.ingredientID = ri.ingredientID AND iu2.unitID = i.default_unit_id), " +
+                "         1 " +
+                "      )) / 100) * " +
+                "      COALESCE( " +
+                "         (SELECT nf1.carbohydrates FROM nutrition_facts nf1 " +
+                "           WHERE nf1.ingredientID = ri.ingredientID AND nf1.unitID = ri.unitID), " +
+                "         (SELECT nf2.carbohydrates FROM nutrition_facts nf2 " +
+                "           WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
+                "         0 " +
+                "      ) AS total_carbohydrates, " +
+                "    ((ri.quantity * " +
+                "      COALESCE( " +
+                "         (SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
+                "           WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
+                "         (SELECT iu2.conversionFactor FROM ingredient_units iu2 " +
+                "           WHERE iu2.ingredientID = ri.ingredientID AND iu2.unitID = i.default_unit_id), " +
+                "         1 " +
+                "      )) / 100) * " +
+                "      COALESCE( " +
+                "         (SELECT nf1.protein FROM nutrition_facts nf1 " +
+                "           WHERE nf1.ingredientID = ri.ingredientID AND nf1.unitID = ri.unitID), " +
+                "         (SELECT nf2.protein FROM nutrition_facts nf2 " +
+                "           WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
+                "         0 " +
+                "      ) AS total_protein " +
+                "    FROM recipes r " +
+                "    JOIN recipe_ingredients ri ON r.recipeID = ri.recipeID " +
+                "    JOIN ingredients i ON ri.ingredientID = i.id " +
+                "    WHERE r.recipeID = ? " +
+                ") sub " +
+                "GROUP BY recipeID, title";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, recipeID);
@@ -341,21 +394,53 @@ public class NutritionFactsDatabase {
         String sql = "SELECT " +
                 "r.recipeID, " +
                 "r.title, " +
-                "COALESCE(SUM(ri.quantity * COALESCE(iu.conversionFactor, 1) / 100 * COALESCE(nf.calories, 0)), 0) AS total_calories, " +
-                "COALESCE(SUM(ri.quantity * COALESCE(iu.conversionFactor, 1) / 100 * COALESCE(nf.fat, 0)), 0) AS total_fat, " +
-                "COALESCE(SUM(ri.quantity * COALESCE(iu.conversionFactor, 1) / 100 * COALESCE(nf.carbohydrates, 0)), 0) AS total_carbohydrates, " +
-                "COALESCE(SUM(ri.quantity * COALESCE(iu.conversionFactor, 1) / 100 * COALESCE(nf.protein, 0)), 0) AS total_protein " +
+                "COALESCE(SUM(((ri.quantity * " +
+                "COALESCE((SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
+                "WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
+                "(SELECT iu2.conversionFactor FROM ingredient_units iu2 " +
+                "WHERE iu2.ingredientID = ri.ingredientID AND iu2.unitID = i.default_unit_id), " +
+                "1)) / 100) * " +
+                "COALESCE((SELECT nf1.calories FROM nutrition_facts nf1 " +
+                "WHERE nf1.ingredientID = ri.ingredientID AND nf1.unitID = ri.unitID), " +
+                "(SELECT nf2.calories FROM nutrition_facts nf2 " +
+                "WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
+                "0)), 0) AS total_calories, " +
+                "COALESCE(SUM(((ri.quantity * " +
+                "COALESCE((SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
+                "WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
+                "(SELECT iu2.conversionFactor FROM ingredient_units iu2 " +
+                "WHERE iu2.ingredientID = ri.ingredientID AND iu2.unitID = i.default_unit_id), " +
+                "1)) / 100) * " +
+                "COALESCE((SELECT nf1.fat FROM nutrition_facts nf1 " +
+                "WHERE nf1.ingredientID = ri.ingredientID AND nf1.unitID = ri.unitID), " +
+                "(SELECT nf2.fat FROM nutrition_facts nf2 " +
+                "WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
+                "0)), 0) AS total_fat, " +
+                "COALESCE(SUM(((ri.quantity * " +
+                "COALESCE((SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
+                "WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
+                "(SELECT iu2.conversionFactor FROM ingredient_units iu2 " +
+                "WHERE iu2.ingredientID = ri.ingredientID AND iu2.unitID = i.default_unit_id), " +
+                "1)) / 100) * " +
+                "COALESCE((SELECT nf1.carbohydrates FROM nutrition_facts nf1 " +
+                "WHERE nf1.ingredientID = ri.ingredientID AND nf1.unitID = ri.unitID), " +
+                "(SELECT nf2.carbohydrates FROM nutrition_facts nf2 " +
+                "WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
+                "0)), 0) AS total_carbohydrates, " +
+                "COALESCE(SUM(((ri.quantity * " +
+                "COALESCE((SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
+                "WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
+                "(SELECT iu2.conversionFactor FROM ingredient_units iu2 " +
+                "WHERE iu2.ingredientID = ri.ingredientID AND iu2.unitID = i.default_unit_id), " +
+                "1)) / 100) * " +
+                "COALESCE((SELECT nf1.protein FROM nutrition_facts nf1 " +
+                "WHERE nf1.ingredientID = ri.ingredientID AND nf1.unitID = ri.unitID), " +
+                "(SELECT nf2.protein FROM nutrition_facts nf2 " +
+                "WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
+                "0)), 0) AS total_protein " +
                 "FROM recipes AS r " +
-                "LEFT JOIN recipe_ingredients AS ri " +
-                "    ON r.recipeID = ri.recipeID " +
-                "LEFT JOIN ingredients AS i " +
-                "    ON ri.ingredientID = i.id " +
-                "LEFT JOIN ingredient_units AS iu " +
-                "    ON ri.ingredientID = iu.ingredientID " +
-                "        AND iu.unitID = i.default_unit_id " +
-                "LEFT JOIN nutrition_facts AS nf " +
-                "    ON ri.ingredientID = nf.ingredientID " +
-                "        AND nf.unitID = i.default_unit_id " +
+                "LEFT JOIN recipe_ingredients AS ri ON r.recipeID = ri.recipeID " +
+                "LEFT JOIN ingredients AS i ON ri.ingredientID = i.id " +
                 "WHERE r.recipeID IN (" + placeholders + ") " +
                 "GROUP BY r.recipeID, r.title";
 
