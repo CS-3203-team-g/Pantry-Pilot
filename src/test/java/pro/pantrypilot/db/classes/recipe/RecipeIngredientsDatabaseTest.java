@@ -11,9 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class RecipeIngredientsDatabaseTest {
 
     private void initTest() {
-        IngredientsDatabase.initializeIngredientsDatabase();
-        RecipeDatabase.initializeRecipeDatabase();
-        RecipeIngredientsDatabase.initializeRecipeIngredientsDatabase();
+        DatabaseConnectionManager.initializeDatabase();
 
         String clearRecipeTableSQL = "DELETE FROM pantry_pilot.recipes;";
         String clearIngredientTableSQL = "DELETE FROM pantry_pilot.ingredients;";
@@ -23,7 +21,6 @@ class RecipeIngredientsDatabaseTest {
         String insertIngredientSQL = "INSERT INTO pantry_pilot.ingredients (ingredientID, ingredientName) VALUES (1, 'semisweet chocolate chips');";
         String insertRecipeIngredientSQL = "INSERT INTO pantry_pilot.recipe_ingredients (recipeID, ingredientID, quantity, unit) VALUES (1, 1, 1, 'cup');";
 
-        DatabaseConnectionManager.initializeDatabase();
         try {
             Connection conn = DatabaseConnectionManager.getConnection();
             conn.createStatement().execute(clearRecipeTableSQL);

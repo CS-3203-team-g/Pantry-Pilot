@@ -20,7 +20,7 @@ class IngredientsDatabaseTest {
     @BeforeEach
     void setUp() throws Exception {
         // Initialize the test database
-        IngredientsDatabase.initializeIngredientsDatabase();
+        DatabaseConnectionManager.initializeDatabase();
         connection = DatabaseConnectionManager.getConnection();
         
         // Clean up any existing data

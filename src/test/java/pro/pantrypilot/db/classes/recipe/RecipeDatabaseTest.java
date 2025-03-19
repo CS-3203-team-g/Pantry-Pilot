@@ -21,10 +21,7 @@ class RecipeDatabaseTest {
     @BeforeEach
     void setUp() throws Exception {
         // Initialize the test databases
-        UnitsDatabase.initializeUnitsDatabase();
-        IngredientsDatabase.initializeIngredientsDatabase();
-        RecipeDatabase.initializeRecipeDatabase();
-        RecipeIngredientsDatabase.initializeRecipeIngredientsDatabase();
+        DatabaseConnectionManager.initializeDatabase();
         connection = DatabaseConnectionManager.getConnection();
         
         // Clean up any existing data

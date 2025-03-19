@@ -20,7 +20,7 @@ class SessionsDatabaseTest {
     @BeforeEach
     void setUp() throws Exception {
         // Initialize the test database
-        SessionsDatabase.initializeSessionsDatabase();
+        DatabaseConnectionManager.initializeDatabase();
         connection = DatabaseConnectionManager.getConnection();
         
         // Generate a proper hashed password using PasswordHasher
