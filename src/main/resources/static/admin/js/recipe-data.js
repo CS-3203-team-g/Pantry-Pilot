@@ -13,6 +13,7 @@ const RecipeData = {
     draftRecipe: null,
     draftRecipeIngredients: [],
     draftIngredientUnits: [],
+    draftNutritionFacts: [], // New array to track nutrition fact changes in draft mode
 
     updateJsonEditor() {
         document.getElementById("jsonEditor").value = JSON.stringify(this.data, null, 2);
@@ -115,10 +116,13 @@ const RecipeData = {
 
         if (existingIngredient) {
             if (!this.data.ingredientUnits) { this.data.ingredientUnits = []; }
+            // Check for existing ingredient-unit combination
             let mappingExists = this.data.ingredientUnits.some(mapping =>
-                mapping.ingredientID === existingIngredient.ingredientID && mapping.unitID === unitID
+                mapping.ingredientID === existingIngredient.ingredientID && 
+                mapping.unitID === unitID
             );
             if (!mappingExists) {
+                // Only add a default conversion factor for new unit combinations
                 this.addOrUpdateConversionFactor(existingIngredient.ingredientID, unitID, 1);
             }
             this.updateJsonEditor();
@@ -133,6 +137,7 @@ const RecipeData = {
             };
             this.data.ingredients.push(newIngredient);
             if (!this.data.ingredientUnits) { this.data.ingredientUnits = []; }
+            // Add default conversion factor for the first unit
             this.addOrUpdateConversionFactor(newIngredientID, unitID, 1);
             this.updateJsonEditor();
             return newIngredientID;
@@ -205,9 +210,22 @@ const RecipeData = {
             this.draftIngredientUnits = relevantIngredientUnits.map(
                 iu => JSON.parse(JSON.stringify(iu))
             );
+
+            // Make a copy of nutritionFacts for all ingredients in this recipe
+            if (this.data.nutritionFacts && this.data.nutritionFacts.length > 0) {
+                const relevantNutritionFacts = this.data.nutritionFacts.filter(
+                    nf => ingredientIDs.has(nf.ingredientID)
+                );
+                this.draftNutritionFacts = relevantNutritionFacts.map(
+                    nf => JSON.parse(JSON.stringify(nf))
+                );
+            } else {
+                this.draftNutritionFacts = [];
+            }
         } else {
             this.draftRecipeIngredients = [];
             this.draftIngredientUnits = [];
+            this.draftNutritionFacts = [];
         }
     },
     
@@ -216,6 +234,7 @@ const RecipeData = {
         this.draftRecipe = null;
         this.draftRecipeIngredients = [];
         this.draftIngredientUnits = [];
+        this.draftNutritionFacts = [];
     },
     
     // Save edits to the actual data
@@ -240,12 +259,16 @@ const RecipeData = {
             
             // Update conversion factors
             this.syncDraftConversionFactors();
+            
+            // Update nutrition facts
+            this.syncDraftNutritionFacts();
         }
         
         // Clear drafts
         this.draftRecipe = null;
         this.draftRecipeIngredients = [];
         this.draftIngredientUnits = [];
+        this.draftNutritionFacts = [];
         
         this.updateJsonEditor();
     },
@@ -268,6 +291,28 @@ const RecipeData = {
             } else {
                 // Add new conversion factor
                 this.data.ingredientUnits.push(draftCF);
+            }
+        });
+    },
+
+    // Synchronize draft nutrition facts with the main data
+    syncDraftNutritionFacts() {
+        if (this.draftNutritionFacts.length === 0) return;
+        
+        // For each draft nutrition fact
+        this.draftNutritionFacts.forEach(draftNF => {
+            // Find matching nutrition fact in the main data
+            const existingIndex = this.data.nutritionFacts.findIndex(nf => 
+                nf.ingredientID === draftNF.ingredientID && 
+                nf.unitID === draftNF.unitID
+            );
+            
+            if (existingIndex >= 0) {
+                // Update existing nutrition fact
+                this.data.nutritionFacts[existingIndex] = draftNF;
+            } else {
+                // Add new nutrition fact
+                this.data.nutritionFacts.push(draftNF);
             }
         });
     },
@@ -451,28 +496,157 @@ const RecipeData = {
         if (!this.data.ingredientUnits) {
             this.data.ingredientUnits = [];
         }
-        
+
+        const parsedIngredientID = parseInt(ingredientID);
+        const parsedUnitID = parseInt(unitID);
+        const parsedFactor = parseFloat(conversionFactor);
+
+        // Find existing conversion factor for this exact ingredient-unit combination
         const existingIndex = this.data.ingredientUnits.findIndex(cf => 
-            cf.ingredientID === parseInt(ingredientID) && cf.unitID === parseInt(unitID)
+            cf.ingredientID === parsedIngredientID && 
+            cf.unitID === parsedUnitID
         );
-        
+
         if (existingIndex >= 0) {
-            this.data.ingredientUnits[existingIndex].conversionFactor = parseFloat(conversionFactor);
+            // Update existing conversion factor for this specific unit
+            this.data.ingredientUnits[existingIndex].conversionFactor = parsedFactor;
+        } else {
+            // Add new conversion factor for this specific unit
+            this.data.ingredientUnits.push({
+                ingredientID: parsedIngredientID,
+                unitID: parsedUnitID,
+                conversionFactor: parsedFactor
+            });
         }
-        
+
         this.updateJsonEditor();
     },
 
     getConversionFactor(ingredientID, unitID) {
         ingredientID = parseInt(ingredientID);
         unitID = parseInt(unitID);
-        
+
+        // Get conversion factors from either draft or main data
         const conversionFactors = this.getConversionFactors();
+        
+        // Look for an exact match of ingredient and unit
         const factor = conversionFactors.find(cf => 
-            cf.ingredientID === ingredientID && cf.unitID === unitID
+            cf.ingredientID === ingredientID && 
+            cf.unitID === unitID
+        );
+
+        return factor ? factor.conversionFactor : 1; // Default to 1 if not found
+    },
+    
+    // Nutrition Facts Management
+    getNutritionFacts() {
+        // Return draft nutrition facts if in draft mode, otherwise return from main data
+        return this.draftRecipe ? this.draftNutritionFacts : (this.data.nutritionFacts || []);
+    },
+    
+    addOrUpdateNutritionFact(ingredientID, unitID, nutritionData) {
+        // Ensure nutritionFacts array exists
+        if (!this.data.nutritionFacts) {
+            this.data.nutritionFacts = [];
+        }
+        
+        const parsedIngredientID = parseInt(ingredientID);
+        const parsedUnitID = parseInt(unitID);
+        
+        // If we're in draft mode, update or add to draft nutrition facts
+        if (this.draftRecipe) {
+            // First check if we already have nutrition facts for this ingredient
+            let existingIndices = this.draftNutritionFacts
+                .map((nf, index) => nf.ingredientID === parsedIngredientID ? index : -1)
+                .filter(index => index !== -1);
+            
+            const nutritionFact = {
+                ingredientID: parsedIngredientID,
+                unitID: parsedUnitID,
+                ...nutritionData
+            };
+            
+            if (existingIndices.length > 0) {
+                // Update all entries for this ingredient
+                existingIndices.forEach(index => {
+                    this.draftNutritionFacts[index] = {
+                        ...this.draftNutritionFacts[index],
+                        ...nutritionData
+                    };
+                });
+                
+                // If there's no entry with the exact unit, add it
+                const hasExactUnitMatch = this.draftNutritionFacts.some(nf => 
+                    nf.ingredientID === parsedIngredientID && nf.unitID === parsedUnitID
+                );
+                
+                if (!hasExactUnitMatch) {
+                    this.draftNutritionFacts.push(nutritionFact);
+                }
+            } else {
+                // No existing nutrition facts for this ingredient, add new one
+                this.draftNutritionFacts.push(nutritionFact);
+            }
+        } else {
+            // Direct update mode
+            // Find all entries for this ingredient
+            let existingIndices = this.data.nutritionFacts
+                .map((nf, index) => nf.ingredientID === parsedIngredientID ? index : -1)
+                .filter(index => index !== -1);
+            
+            const nutritionFact = {
+                ingredientID: parsedIngredientID,
+                unitID: parsedUnitID,
+                ...nutritionData
+            };
+            
+            if (existingIndices.length > 0) {
+                // Update all entries for this ingredient
+                existingIndices.forEach(index => {
+                    this.data.nutritionFacts[index] = {
+                        ...this.data.nutritionFacts[index],
+                        ...nutritionData
+                    };
+                });
+                
+                // If there's no entry with the exact unit, add it
+                const hasExactUnitMatch = this.data.nutritionFacts.some(nf => 
+                    nf.ingredientID === parsedIngredientID && nf.unitID === parsedUnitID
+                );
+                
+                if (!hasExactUnitMatch) {
+                    this.data.nutritionFacts.push(nutritionFact);
+                }
+            } else {
+                // No existing nutrition facts for this ingredient, add new one
+                this.data.nutritionFacts.push(nutritionFact);
+            }
+            
+            this.updateJsonEditor();
+        }
+    },
+    
+    getNutritionFact(ingredientID, unitID) {
+        ingredientID = parseInt(ingredientID);
+        unitID = parseInt(unitID);
+        
+        // Get nutrition facts from either draft or main data
+        const nutritionFacts = this.getNutritionFacts();
+        
+        // First, try to find an exact match for this ingredient and unit
+        let nutritionFact = nutritionFacts.find(nf => 
+            nf.ingredientID === ingredientID && 
+            nf.unitID === unitID
         );
         
-        return factor ? factor.conversionFactor : 1; // Default to 1 if not found
+        // If no exact match found, look for any nutrition facts for this ingredient
+        if (!nutritionFact) {
+            nutritionFact = nutritionFacts.find(nf => 
+                nf.ingredientID === ingredientID
+            );
+        }
+        
+        return nutritionFact;
     }
 };
 

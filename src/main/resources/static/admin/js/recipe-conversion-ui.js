@@ -139,37 +139,45 @@ const RecipeConversionUI = {
         // Get ingredients for current recipe
         const recipeIngredients = RecipeData.getIngredientsForRecipe(currentRecipe.recipeID);
         
-        // Create a set of ingredient IDs in the current recipe for quick lookup
-        const recipeIngredientIds = new Set(recipeIngredients.map(ri => ri.ingredientID));
-        
-        // Get all ingredient units data that match ingredients in the current recipe
-        const allIngredientUnits = RecipeData.data.ingredientUnits || [];
-        const relevantIngredientUnits = allIngredientUnits.filter(iu => 
-            recipeIngredientIds.has(iu.ingredientID)
-        );
-        
-        if (relevantIngredientUnits.length === 0) {
+        if (recipeIngredients.length === 0) {
             if (emptyMessage) emptyMessage.style.display = "block";
             return;
         }
         
         if (emptyMessage) emptyMessage.style.display = "none";
         
+        // Create virtual conversion factors for all ingredient-unit combinations in the recipe
+        const allConversionFactors = RecipeData.getConversionFactors();
+        const virtualConversionFactors = recipeIngredients.map(ri => {
+            // Look for existing conversion factor
+            const existingFactor = allConversionFactors.find(cf => 
+                cf.ingredientID === ri.ingredientID && 
+                cf.unitID === ri.unitID
+            );
+            
+            // If it exists, use it; otherwise create a virtual one
+            return existingFactor || {
+                ingredientID: ri.ingredientID,
+                unitID: ri.unitID,
+                conversionFactor: 1 // Default value
+            };
+        });
+        
         // Sort by ingredient name, then unit name
-        const sortedData = [...relevantIngredientUnits].sort(function(a, b) {
-            var ingredientA = RecipeData.data.ingredients.find(i => i.ingredientID === a.ingredientID);
-            var ingredientB = RecipeData.data.ingredients.find(i => i.ingredientID === b.ingredientID);
-            var ingredientNameA = ingredientA ? ingredientA.ingredientName : '';
-            var ingredientNameB = ingredientB ? ingredientB.ingredientName : '';
+        const sortedData = [...virtualConversionFactors].sort((a, b) => {
+            const ingredientA = RecipeData.data.ingredients.find(i => i.ingredientID === a.ingredientID);
+            const ingredientB = RecipeData.data.ingredients.find(i => i.ingredientID === b.ingredientID);
+            const ingredientNameA = ingredientA ? ingredientA.ingredientName : '';
+            const ingredientNameB = ingredientB ? ingredientB.ingredientName : '';
             
             if (ingredientNameA !== ingredientNameB) {
                 return ingredientNameA.localeCompare(ingredientNameB);
             }
             
-            var unitA = RecipeData.data.units.find(u => u.unitID === a.unitID);
-            var unitB = RecipeData.data.units.find(u => u.unitID === b.unitID);
-            var unitNameA = unitA ? unitA.unitName : '';
-            var unitNameB = unitB ? unitB.unitName : '';
+            const unitA = RecipeData.data.units.find(u => u.unitID === a.unitID);
+            const unitB = RecipeData.data.units.find(u => u.unitID === b.unitID);
+            const unitNameA = unitA ? unitA.unitName : '';
+            const unitNameB = unitB ? unitB.unitName : '';
             
             return unitNameA.localeCompare(unitNameB);
         });
@@ -181,20 +189,32 @@ const RecipeConversionUI = {
             
             if (!ingredient || !unit) return;
             
-            // Find the recipe ingredient to get the unit that's used in the recipe
-            const recipeIngredient = recipeIngredients.find(ri => ri.ingredientID === cf.ingredientID);
-            const recipeUnitName = recipeIngredient ? recipeIngredient.unitName : '';
+            const recipeIngredient = recipeIngredients.find(ri => 
+                ri.ingredientID === cf.ingredientID && 
+                ri.unitID === cf.unitID
+            );
+            
+            if (!recipeIngredient) return; // Skip if not used in recipe
             
             const div = document.createElement("div");
             div.className = "conversion-factor-item d-flex justify-content-between align-items-center";
             div.dataset.index = index;
             
+            // Add a visual indicator if this is a default conversion factor
+            const isDefault = !allConversionFactors.some(existing => 
+                existing.ingredientID === cf.ingredientID && 
+                existing.unitID === cf.unitID
+            );
+            
             div.innerHTML = `
                 <div class="d-flex justify-content-between align-items-start w-100">
                     <div class="conversion-factor-info flex-grow-0" style="width: 40%;">
-                        <span class="fw-bold">${recipeUnitName} of ${ingredient.ingredientName}</span>
+                        <span class="fw-bold">${unit.unitName} of ${ingredient.ingredientName}</span>
                         <span class="text-secondary"> → gram</span>
-                        <span class="ms-2 badge bg-light text-dark conversion-factor-display">Factor: ${cf.conversionFactor || 1}</span>
+                        <span class="ms-2 badge ${isDefault ? 'bg-warning' : 'bg-light'} text-dark conversion-factor-display">
+                            Factor: ${cf.conversionFactor || 1}
+                            ${isDefault ? ' (default)' : ''}
+                        </span>
                     </div>
                     <div class="nutritional-info flex-grow-1">
                         ${this.renderNutritionalInfo(cf.ingredientID, cf.unitID)}
@@ -267,18 +287,36 @@ const RecipeConversionUI = {
         saveBtn.addEventListener('click', () => {
             const newValue = parseFloat(input.value);
             if (!isNaN(newValue) && newValue > 0) {
+                // Get the current recipe to check if we're in draft mode
+                const currentRecipe = RecipeData.getCurrentRecipe();
+                
                 // Update the conversion factor
-                const ingredient = RecipeData.data.ingredients.find(i => i.ingredientID === conversionFactor.ingredientID);
-                const unit = RecipeData.data.units.find(u => u.unitID === conversionFactor.unitID);
+                if (currentRecipe && currentRecipe === RecipeData.draftRecipe) {
+                    // We're in draft mode, update the draft conversion factors
+                    const draftIndex = RecipeData.draftIngredientUnits.findIndex(cf => 
+                        cf.ingredientID === conversionFactor.ingredientID && 
+                        cf.unitID === conversionFactor.unitID
+                    );
+                    
+                    if (draftIndex >= 0) {
+                        RecipeData.draftIngredientUnits[draftIndex].conversionFactor = newValue;
+                    } else {
+                        RecipeData.draftIngredientUnits.push({
+                            ingredientID: conversionFactor.ingredientID,
+                            unitID: conversionFactor.unitID,
+                            conversionFactor: newValue
+                        });
+                    }
+                } else {
+                    // Direct update mode
+                    RecipeData.addOrUpdateConversionFactor(
+                        conversionFactor.ingredientID,
+                        conversionFactor.unitID,
+                        newValue
+                    );
+                }
                 
-                RecipeData.addOrUpdateConversionFactor(
-                    conversionFactor.ingredientID,
-                    conversionFactor.unitID,
-                    newValue,
-                    index
-                );
-                
-                // Update the display and revert to display mode
+                // Update the display
                 displaySpan.textContent = `Factor: ${newValue}`;
                 displaySpan.style.display = '';
                 infoDiv.removeChild(inputGroup);
@@ -286,8 +324,9 @@ const RecipeConversionUI = {
                 // Re-enable the action buttons
                 actionButtons.forEach(button => button.disabled = false);
                 
-                // Update the JSON editor
+                // Update the JSON editor and preview
                 RecipeData.updateJsonEditor();
+                RecipeRenderUI.renderRecipePreview();
             } else {
                 alert('Please enter a valid positive number for the conversion factor.');
                 input.focus();
@@ -318,16 +357,18 @@ const RecipeConversionUI = {
     },
 
     renderNutritionalInfo(ingredientID, unitID) {
-        const nutrition = RecipeData.data.nutritionFacts?.find(n => 
-            n.ingredientID === ingredientID && n.unitID === unitID
-        ) || { calories: 0, protein: 0, fat: 0, carbohydrates: 0 };
+        // Use the new getNutritionFact method to get the nutrition data
+        const nutrition = RecipeData.getNutritionFact(ingredientID, unitID);
 
+        // Only show values that actually exist, don't default to 0
+        const formatValue = (val) => val !== null && val !== undefined ? Math.round(val) : '-';
+        
         return `
             <div class="nutrition-facts small text-muted mt-1">
-                <span class="me-2">Cal: ${nutrition.calories || 0}</span>
-                <span class="me-2">Pro: ${nutrition.protein || 0}g</span>
-                <span class="me-2">Fat: ${nutrition.fat || 0}g</span>
-                <span>Carbs: ${nutrition.carbohydrates || 0}g</span>
+                <span class="me-2">Cal: ${formatValue(nutrition?.calories)}</span>
+                <span class="me-2">Pro: ${formatValue(nutrition?.protein)}${nutrition?.protein ? 'g' : ''}</span>
+                <span class="me-2">Fat: ${formatValue(nutrition?.fat)}${nutrition?.fat ? 'g' : ''}</span>
+                <span>Carbs: ${formatValue(nutrition?.carbohydrates)}${nutrition?.carbohydrates ? 'g' : ''}</span>
             </div>
         `;
     },
@@ -336,9 +377,8 @@ const RecipeConversionUI = {
         const nutritionDiv = itemElement.querySelector('.nutritional-info');
         if (!nutritionDiv) return;
 
-        const currentNutrition = RecipeData.data.nutritionFacts?.find(n => 
-            n.ingredientID === ingredientID && n.unitID === unitID
-        ) || { calories: 0, protein: 0, fat: 0, carbohydrates: 0 };
+        // Use the new getNutritionFact method to get the nutrition data
+        const currentNutrition = RecipeData.getNutritionFact(ingredientID, unitID);
 
         const inputGroup = document.createElement('div');
         inputGroup.className = 'nutrition-editor mt-2';
@@ -346,19 +386,19 @@ const RecipeConversionUI = {
             <div class="d-flex gap-2 mb-2">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text">Cal</span>
-                    <input type="number" class="form-control nutrition-calories" value="${currentNutrition.calories || 0}" min="0" step="1">
+                    <input type="number" class="form-control nutrition-calories" value="${currentNutrition?.calories ?? ''}" min="0" step="1">
                 </div>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text">Pro</span>
-                    <input type="number" class="form-control nutrition-protein" value="${currentNutrition.protein || 0}" min="0" step="0.1">
+                    <input type="number" class="form-control nutrition-protein" value="${currentNutrition?.protein ?? ''}" min="0" step="0.1">
                 </div>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text">Fat</span>
-                    <input type="number" class="form-control nutrition-fat" value="${currentNutrition.fat || 0}" min="0" step="0.1">
+                    <input type="number" class="form-control nutrition-fat" value="${currentNutrition?.fat ?? ''}" min="0" step="0.1">
                 </div>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text">Carb</span>
-                    <input type="number" class="form-control nutrition-carbs" value="${currentNutrition.carbohydrates || 0}" min="0" step="0.1">
+                    <input type="number" class="form-control nutrition-carbs" value="${currentNutrition?.carbohydrates ?? ''}" min="0" step="0.1">
                 </div>
             </div>
             <div class="btn-group btn-group-sm">
@@ -379,41 +419,27 @@ const RecipeConversionUI = {
         const cancelBtn = inputGroup.querySelector('.cancel-nutrition');
 
         saveBtn.addEventListener('click', () => {
-            const calories = parseFloat(inputGroup.querySelector('.nutrition-calories').value);
-            const protein = parseFloat(inputGroup.querySelector('.nutrition-protein').value);
-            const fat = parseFloat(inputGroup.querySelector('.nutrition-fat').value);
-            const carbs = parseFloat(inputGroup.querySelector('.nutrition-carbs').value);
+            // Get values from inputs, using null for empty/invalid values
+            const calories = parseFloat(inputGroup.querySelector('.nutrition-calories').value) || null;
+            const protein = parseFloat(inputGroup.querySelector('.nutrition-protein').value) || null;
+            const fat = parseFloat(inputGroup.querySelector('.nutrition-fat').value) || null;
+            const carbs = parseFloat(inputGroup.querySelector('.nutrition-carbs').value) || null;
 
-            if ([calories, protein, fat, carbs].some(isNaN)) {
-                alert('Please enter valid numbers for all nutritional values');
+            // Only save nutrition facts if at least one value is provided
+            if ([calories, protein, fat, carbs].every(val => val === null)) {
+                nutritionDiv.innerHTML = originalContent;
                 return;
             }
 
-            // Update or add nutrition facts
-            const nutritionData = {
-                ingredientID,
-                unitID,
+            // Use the new addOrUpdateNutritionFact method
+            RecipeData.addOrUpdateNutritionFact(ingredientID, unitID, {
                 calories,
                 protein,
                 fat,
                 carbohydrates: carbs
-            };
+            });
 
-            if (!RecipeData.data.nutritionFacts) {
-                RecipeData.data.nutritionFacts = [];
-            }
-
-            const existingIndex = RecipeData.data.nutritionFacts.findIndex(n => 
-                n.ingredientID === ingredientID && n.unitID === unitID
-            );
-
-            if (existingIndex >= 0) {
-                RecipeData.data.nutritionFacts[existingIndex] = nutritionData;
-            } else {
-                RecipeData.data.nutritionFacts.push(nutritionData);
-            }
-
-            // Update display
+            // Update display using the new renderNutritionalInfo method
             nutritionDiv.innerHTML = this.renderNutritionalInfo(ingredientID, unitID);
             RecipeData.updateJsonEditor();
         });

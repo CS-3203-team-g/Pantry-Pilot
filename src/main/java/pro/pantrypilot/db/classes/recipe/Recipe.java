@@ -2,10 +2,14 @@ package pro.pantrypilot.db.classes.recipe;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pro.pantrypilot.db.classes.ingredient.NutritionFacts;
+import pro.pantrypilot.db.classes.ingredient.NutritionFactsDatabase;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class Recipe {
 
@@ -75,6 +79,56 @@ public class Recipe {
 
     public float getRating() {
         return rating;
+    }
+    
+    /**
+     * Calculate the total nutritional information for the entire recipe
+     * using efficient SQL-based calculation.
+     * 
+     * @return A NutritionFacts object containing the total nutritional information for the recipe
+     */
+    public NutritionFacts calculateTotalNutrition() {
+        return NutritionFactsDatabase.calculateRecipeNutrition(this.recipeID);
+    }
+
+    /**
+     * Calculate the nutritional information for each ingredient in the recipe.
+     * Note: This method is kept for backwards compatibility but should be avoided
+     * for performance reasons. Use calculateTotalNutrition() instead.
+     * 
+     * @return A list of nutritional facts for each ingredient
+     */
+    @Deprecated
+    public List<NutritionFacts> calculateIngredientNutrition() {
+        if (this.ingredients == null || this.ingredients.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        List<Long> ingredientIDs = new ArrayList<>();
+        List<Float> quantities = new ArrayList<>();
+        List<Integer> unitIDs = new ArrayList<>();
+        
+        for (RecipeIngredient ingredient : this.ingredients) {
+            if (ingredient.getUnitID() != null) {
+                ingredientIDs.add(ingredient.getIngredientID());
+                quantities.add((float) ingredient.getQuantity());
+                unitIDs.add(ingredient.getUnitID());
+            }
+        }
+        
+        Map<String, NutritionFacts> nutritionMap = NutritionFactsDatabase.calculateNutritionFactsForIngredients(
+            ingredientIDs, quantities, unitIDs);
+        
+        List<NutritionFacts> nutritionList = new ArrayList<>();
+        for (int i = 0; i < ingredientIDs.size(); i++) {
+            String key = ingredientIDs.get(i) + "-" + unitIDs.get(i);
+            NutritionFacts facts = nutritionMap.get(key);
+            if (facts != null) {
+                nutritionList.add(facts);
+            }
+        }
+        
+        return nutritionList;
     }
 
     @Override

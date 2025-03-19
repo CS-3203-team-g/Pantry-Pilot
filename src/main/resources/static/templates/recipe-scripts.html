@@ -137,6 +137,25 @@
         return urlParams.get('id');
     }
 
+    async function loadNutritionFacts(recipeID) {
+        try {
+            const response = await fetch(`/api/getRecipeNutritionFacts?id=${recipeID}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch nutrition facts');
+            }
+            const data = await response.json();
+            console.log('Nutrition facts response:', data); // Add logging to debug
+            if (!data || !data.total) {
+                console.error('Invalid nutrition facts format:', data);
+                return { calories: 0, protein: 0, fat: 0, carbohydrates: 0 };
+            }
+            return data.total; // The API returns { total: { calories, protein, fat, carbohydrates } }
+        } catch (error) {
+            console.error('Error fetching nutrition facts:', error);
+            return { calories: 0, protein: 0, fat: 0, carbohydrates: 0 };
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", async function () {
         const recipeID = getRecipeID();
         if (!recipeID) {
@@ -145,60 +164,84 @@
         }
 
         try {
-            const response = await fetch(`/api/getRecipeWithIngredients?id=${recipeID}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch recipe details');
-            }
-            const recipe = await response.json();
+            const [recipe, nutrition] = await Promise.all([
+                fetch(`/api/getRecipeWithIngredients?id=${recipeID}`).then(r => r.json()),
+                loadNutritionFacts(recipeID)
+            ]);
+
             const recipeDetails = document.getElementById('recipeDetails');
-
             if (recipe && recipe.rating !== undefined) {
-                recipeDetails.innerHTML = `
-            <div class="col-12">
-              <section id="recipeTitle" class="text-center mb-4">
-                <h2>${recipe.title}</h2>
-                <div class="rating">
-                  ${'<i class="fas fa-star"></i>'.repeat(Math.floor(recipe.rating))}
-                  ${'<i class="far fa-star"></i>'.repeat(5 - Math.floor(recipe.rating))}
-                  <span>${recipe.rating.toFixed(1)}/5</span>
-                </div>
-              </section>
-            </div>
-            <div class="col-12">
-              <section id="recipeImage" class="text-center mb-4">
-                  <img src="${recipe.thumbnailUrl || 'default-thumbnail.jpg'}" class="recipe-img img-fluid" alt="${recipe.title}" style="width: 33%; height: auto;">
-              </section>
+                let nutritionHtml = nutrition ? `
+                    <div class="nutrition-facts card mt-4 mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Nutrition Facts</h5>
+                            <hr>
+                            <div class="row">
+                                <div class="col-6 col-md-3">
+                                    <p class="mb-0"><strong>Calories:</strong></p>
+                                    <p>${Math.round(nutrition.calories || 0)}</p>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <p class="mb-0"><strong>Protein:</strong></p>
+                                    <p>${Math.round(nutrition.protein || 0)}g</p>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <p class="mb-0"><strong>Fat:</strong></p>
+                                    <p>${Math.round(nutrition.fat || 0)}g</p>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <p class="mb-0"><strong>Carbs:</strong></p>
+                                    <p>${Math.round(nutrition.carbohydrates || 0)}g</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>` : '';
 
-              <!-- Button to trigger modal -->
-                <div>
-                  <section id="recipeActions" class="text-center mb-4">
-                    ${getCookie('username') ? `
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addToListModal" style="width: 15%; height: auto;">
-                        Add Ingredients
-                    </button>
-                    ` : ''}
-                  </section>
-                </div>
-            </div>
-            <div class="col-12">
-              <section id="recipeDirections" class="mb-4">
-                <h4>Instructions</h4>
-                <p>${recipe.instructions}</p>
-              </section>
-            </div>
-            <div class="col-12">
-              <section id="recipeIngredients" class="mb-4">
-                <h4>Ingredients</h4>
-                <ul>
-                  ${recipe.ingredients.map(ingredient => `
-                    <li>${ingredient.quantity} ${ingredient.unitName && ingredient.quantity > 1 ?
-                                    (ingredient.unitName.endsWith('s') ? ingredient.unitName : ingredient.unitName + 's') :
-                                    ingredient.unitName} ${ingredient.ingredientName}</li>
-                  `).join('')}
-                </ul>
-              </section>
-            </div>
-          `;
+                recipeDetails.innerHTML = `
+                    <div class="col-12">
+                        <section id="recipeTitle" class="text-center mb-4">
+                            <h2>${recipe.title}</h2>
+                            <div class="rating">
+                                ${'<i class="fas fa-star"></i>'.repeat(Math.floor(recipe.rating))}
+                                ${'<i class="far fa-star"></i>'.repeat(5 - Math.floor(recipe.rating))}
+                                <span>${recipe.rating.toFixed(1)}/5</span>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="col-12">
+                        <section id="recipeImage" class="text-center mb-4">
+                            <img src="${recipe.thumbnailUrl || 'default-thumbnail.jpg'}" class="recipe-img img-fluid" alt="${recipe.title}" style="width: 33%; height: auto;">
+                        </section>
+                        <div>
+                            <section id="recipeActions" class="text-center mb-4">
+                                ${getCookie('username') ? `
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addToListModal" style="width: 15%; height: auto;">
+                                    Add Ingredients
+                                </button>
+                                ` : ''}
+                            </section>
+                        </div>
+                    </div>
+                    ${nutritionHtml}
+                    <div class="col-12">
+                        <section id="recipeDirections" class="mb-4">
+                            <h4>Instructions</h4>
+                            <p>${recipe.instructions}</p>
+                        </section>
+                    </div>
+                    <div class="col-12">
+                        <section id="recipeIngredients" class="mb-4">
+                            <h4>Ingredients</h4>
+                            <ul>
+                                ${recipe.ingredients.map(ingredient => `
+                                    <li>${ingredient.quantity} ${ingredient.unitName && ingredient.quantity > 1 ?
+                                        (ingredient.unitName.endsWith('s') ? ingredient.unitName : ingredient.unitName + 's') :
+                                        ingredient.unitName} ${ingredient.ingredientName}</li>
+                                `).join('')}
+                            </ul>
+                        </section>
+                    </div>
+                `;
             } else {
                 console.error('Recipe rating is undefined');
             }

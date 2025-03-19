@@ -12,6 +12,9 @@ const RecipeUI = {
         // Clear the ingredient form
         RecipeIngredientsUI.clearIngredientForm();
         
+        // Start editing to create draft copies
+        RecipeData.startEditing();
+        
         // Render the ingredients list and preview
         RecipeIngredientsUI.renderIngredientsList(recipe);
         RecipeConversionUI.renderConversionFactorsList();
@@ -19,6 +22,20 @@ const RecipeUI = {
         
         // Update ingredient suggestions
         RecipeIngredientsUI.updateIngredientDatalist();
+    },
+
+    // Save recipe changes
+    saveRecipe() {
+        RecipeData.saveEdits();
+        RecipeRenderUI.renderRecipePreview();
+        RecipeConversionUI.renderConversionFactorsList();
+    },
+
+    // Cancel recipe editing
+    cancelEditing() {
+        RecipeData.cancelEditing();
+        RecipeRenderUI.renderRecipePreview();
+        RecipeConversionUI.renderConversionFactorsList();
     }
 };
 

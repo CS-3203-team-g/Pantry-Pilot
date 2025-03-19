@@ -33,27 +33,31 @@ const RecipeIngredientsUI = {
                 ing.ingredientName && ing.ingredientName.trim().toLowerCase() === ingName
             );
 
-            let mappings = [];
+            // Get all units that already have conversion factors for this ingredient
+            let existingUnitMappings = [];
             if (RecipeData.data.ingredientUnits && ingredient) {
-                mappings = RecipeData.data.ingredientUnits.filter(mapping =>
-                    mapping.ingredientID === ingredient.ingredientID
-                );
+                existingUnitMappings = RecipeData.data.ingredientUnits
+                    .filter(mapping => mapping.ingredientID === ingredient.ingredientID)
+                    .map(mapping => {
+                        const unit = RecipeData.data.units.find(u => u.unitID === mapping.unitID);
+                        return unit ? unit.unitName : null;
+                    })
+                    .filter(unitName => unitName !== null);
             }
 
-            if (mappings.length > 0) {
-                mappings.forEach(mapping => {
-                    let unitObj = RecipeData.data.units.find(u => u.unitID === mapping.unitID);
-                    if (unitObj) {
-                        let option = document.createElement("option");
-                        option.value = unitObj.unitName;
-                        datalist.appendChild(option);
-                    }
-                });
-            } else if (ingredient && ingredient.defaultUnitID) {
-                let unitObj = RecipeData.data.units.find(u => u.unitID === ingredient.defaultUnitID);
-                if (unitObj) {
+            // If there are existing mappings, show those first
+            existingUnitMappings.forEach(unitName => {
+                let option = document.createElement("option");
+                option.value = unitName;
+                datalist.appendChild(option);
+            });
+
+            // If this ingredient has a default unit and it's not already shown
+            if (ingredient && ingredient.defaultUnitID) {
+                let defaultUnit = RecipeData.data.units.find(u => u.unitID === ingredient.defaultUnitID);
+                if (defaultUnit && !existingUnitMappings.includes(defaultUnit.unitName)) {
                     let option = document.createElement("option");
-                    option.value = unitObj.unitName;
+                    option.value = defaultUnit.unitName;
                     datalist.appendChild(option);
                 }
             }

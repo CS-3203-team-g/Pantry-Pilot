@@ -50,6 +50,7 @@ public class Main {
         server.createContext("/api/getRecipesWithoutIngredients", new pro.pantrypilot.endpoints.api.recipes.GetRecipesWithoutIngredients());
         server.createContext("/api/getRecipesWithIngredients", new pro.pantrypilot.endpoints.api.recipes.GetRecipesWithIngredients());
         server.createContext("/api/getRecipeWithIngredients", new pro.pantrypilot.endpoints.api.recipes.GetRecipeWithIngredients());
+        server.createContext("/api/getRecipeNutritionFacts", new pro.pantrypilot.endpoints.api.recipes.GetRecipeNutritionFacts());
         server.createContext("/api/getShoppingLists", new pro.pantrypilot.endpoints.api.shoppingLists.GetShoppingLists());
         server.createContext("/api/getShoppingListWithIngredients", new pro.pantrypilot.endpoints.api.shoppingLists.GetShoppingListWithIngredients());
         server.createContext("/api/createShoppingList", new pro.pantrypilot.endpoints.api.shoppingLists.CreateShoppingList());

@@ -6,7 +6,10 @@ import pro.pantrypilot.db.DatabaseConnectionManager;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class NutritionFactsDatabase {
     private static final Logger logger = LoggerFactory.getLogger(NutritionFactsDatabase.class);
@@ -58,7 +61,13 @@ public class NutritionFactsDatabase {
 
     public static boolean loadAllNutritionFacts(List<NutritionFacts> nutritionFacts) {
         Connection connection = DatabaseConnectionManager.getConnection();
-        String sql = "INSERT INTO nutrition_facts (ingredientID, unitID, calories, fat, carbohydrates, protein) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO nutrition_facts (ingredientID, unitID, calories, fat, carbohydrates, protein) " +
+                    "VALUES (?, ?, ?, ?, ?, ?) " +
+                    "ON DUPLICATE KEY UPDATE " +
+                    "calories = VALUES(calories), " +
+                    "fat = VALUES(fat), " +
+                    "carbohydrates = VALUES(carbohydrates), " +
+                    "protein = VALUES(protein)";
         
         try {
             PreparedStatement pstmt = connection.prepareStatement(sql);
@@ -101,5 +110,278 @@ public class NutritionFactsDatabase {
             logger.error("Error loading nutrition facts", e);
             return false;
         }
+    }
+
+    public static NutritionFacts getNutritionFactsForIngredient(long ingredientID, Integer unitID) {
+        if (unitID == null) return null;
+
+        Connection connection = DatabaseConnectionManager.getConnection();
+        String sql = "SELECT nf.* " +
+                    "FROM nutrition_facts nf " +
+                    "JOIN ingredients i ON nf.ingredientID = i.id " +
+                    "WHERE nf.ingredientID = ? AND (nf.unitID = ? OR nf.unitID = i.default_unit_id) " +
+                    "ORDER BY CASE WHEN nf.unitID = ? THEN 0 ELSE 1 END " +
+                    "LIMIT 1";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setLong(1, ingredientID);
+            pstmt.setInt(2, unitID);
+            pstmt.setInt(3, unitID);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return new NutritionFacts(rs);
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error getting nutrition facts for ingredient {} and unit {}", ingredientID, unitID, e);
+        }
+
+        return null;
+    }
+
+    /**
+     * Calculates nutritional information with proper unit conversion.
+     * 
+     * @param ingredientID The ID of the ingredient
+     * @param quantity The quantity of the ingredient
+     * @param unitID The unit ID of the ingredient
+     * @return A NutritionFacts object with nutritional values adjusted by conversion factor, or null if data is not available
+     */
+    public static NutritionFacts calculateNutritionFacts(long ingredientID, float quantity, Integer unitID) {
+        if (unitID == null) return null;
+        
+        // Get reference nutrition facts (usually stored per gram)
+        NutritionFacts baseFacts = getNutritionFactsForIngredient(ingredientID, unitID);
+        if (baseFacts == null) {
+            logger.debug("No nutrition facts found for ingredient {} with unit {}", ingredientID, unitID);
+            return null;
+        }
+        
+        // Get conversion factor from ingredient_units table
+        float conversionFactor = getConversionFactor(ingredientID, unitID);
+        
+        // Calculate adjusted nutritional values
+        Float calories = baseFacts.getCalories() != null ? baseFacts.getCalories() * quantity * conversionFactor : null;
+        Float fat = baseFacts.getFat() != null ? baseFacts.getFat() * quantity * conversionFactor : null;
+        Float carbohydrates = baseFacts.getCarbohydrates() != null ? baseFacts.getCarbohydrates() * quantity * conversionFactor : null;
+        Float protein = baseFacts.getProtein() != null ? baseFacts.getProtein() * quantity * conversionFactor : null;
+        
+        return new NutritionFacts(ingredientID, unitID, calories, fat, carbohydrates, protein);
+    }
+    
+    /**
+     * Get the conversion factor for an ingredient-unit combination
+     * 
+     * @param ingredientID The ingredient ID
+     * @param unitID The unit ID
+     * @return The conversion factor, or 1.0 if not found
+     */
+    private static float getConversionFactor(long ingredientID, int unitID) {
+        Connection connection = DatabaseConnectionManager.getConnection();
+        String sql = "SELECT conversionFactor FROM ingredient_units WHERE ingredientID = ? AND unitID = ?";
+        
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setLong(1, ingredientID);
+            pstmt.setInt(2, unitID);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getFloat("conversionFactor");
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error getting conversion factor for ingredient {} and unit {}", ingredientID, unitID, e);
+        }
+        
+        // Default to 1.0 if no conversion factor found
+        return 1.0f;
+    }
+    
+    /**
+     * Calculate nutrition facts for a list of ingredients with their quantities and units.
+     * 
+     * @param ingredientIDs List of ingredient IDs
+     * @param quantities List of quantities (same order as ingredientIDs)
+     * @param unitIDs List of unit IDs (same order as ingredientIDs)
+     * @return Map of nutrition facts by ingredient ID
+     */
+    public static Map<String, NutritionFacts> calculateNutritionFactsForIngredients(
+            List<Long> ingredientIDs, List<Float> quantities, List<Integer> unitIDs) {
+            
+        if (ingredientIDs == null || ingredientIDs.isEmpty() || 
+            quantities == null || quantities.isEmpty() || 
+            unitIDs == null || unitIDs.isEmpty() ||
+            ingredientIDs.size() != quantities.size() || ingredientIDs.size() != unitIDs.size()) {
+            return new HashMap<>();
+        }
+        
+        Map<String, NutritionFacts> nutritionMap = new HashMap<>();
+        
+        for (int i = 0; i < ingredientIDs.size(); i++) {
+            Long ingredientID = ingredientIDs.get(i);
+            Float quantity = quantities.get(i);
+            Integer unitID = unitIDs.get(i);
+            
+            if (ingredientID == null || quantity == null || unitID == null) continue;
+            
+            NutritionFacts facts = calculateNutritionFacts(ingredientID, quantity, unitID);
+            if (facts != null) {
+                // Use composite key of ingredientID-unitID
+                nutritionMap.put(ingredientID + "-" + unitID, facts);
+            }
+        }
+        
+        return nutritionMap;
+    }
+
+    public static Map<String, NutritionFacts> getNutritionFactsForIngredients(List<Long> ingredientIDs, List<Integer> unitIDs) {
+        if (ingredientIDs == null || ingredientIDs.isEmpty() || unitIDs == null || unitIDs.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        Map<String, NutritionFacts> nutritionMap = new HashMap<>();
+        Connection connection = DatabaseConnectionManager.getConnection();
+        
+        // Build the IN clause for the query
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < ingredientIDs.size(); i++) {
+            if (i > 0) placeholders.append(" OR ");
+            placeholders.append("(ingredientID = ? AND unitID = ?)");
+        }
+
+        String sql = "SELECT * FROM nutrition_facts WHERE " + placeholders.toString();
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            // Set parameters for the IN clause
+            int paramIndex = 1;
+            for (int i = 0; i < ingredientIDs.size(); i++) {
+                pstmt.setLong(paramIndex++, ingredientIDs.get(i));
+                pstmt.setInt(paramIndex++, unitIDs.get(i));
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    NutritionFacts facts = new NutritionFacts(rs);
+                    // Use composite key of ingredientID-unitID
+                    nutritionMap.put(facts.getIngredientID() + "-" + facts.getUnitID(), facts);
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error getting nutrition facts for ingredients: {}", e.getMessage());
+        }
+
+        return nutritionMap;
+    }
+
+    /**
+     * Calculate nutrition facts for a recipe using SQL aggregation
+     * 
+     * @param recipeID The ID of the recipe
+     * @return A NutritionFacts object containing the total nutritional information for the recipe
+     */
+    public static NutritionFacts calculateRecipeNutrition(int recipeID) {
+        Connection connection = DatabaseConnectionManager.getConnection();
+        String sql = "SELECT " +
+                "r.recipeID, " +
+                "r.title, " +
+                "COALESCE(SUM(((ri.quantity * COALESCE(iu.conversionFactor, 1)) / 100) * COALESCE(nf.calories, 0)), 0) AS total_calories, " +
+                "COALESCE(SUM(((ri.quantity * COALESCE(iu.conversionFactor, 1)) / 100) * COALESCE(nf.fat, 0)), 0) AS total_fat, " +
+                "COALESCE(SUM(((ri.quantity * COALESCE(iu.conversionFactor, 1)) / 100) * COALESCE(nf.carbohydrates, 0)), 0) AS total_carbohydrates, " +
+                "COALESCE(SUM(((ri.quantity * COALESCE(iu.conversionFactor, 1)) / 100) * COALESCE(nf.protein, 0)), 0) AS total_protein " +
+                "FROM recipes AS r " +
+                "LEFT JOIN recipe_ingredients AS ri " +
+                "    ON r.recipeID = ri.recipeID " +
+                "LEFT JOIN ingredients AS i " +
+                "    ON ri.ingredientID = i.id " +
+                "LEFT JOIN ingredient_units AS iu " +
+                "    ON ri.ingredientID = iu.ingredientID " +
+                "        AND iu.unitID = i.default_unit_id " +
+                "LEFT JOIN nutrition_facts AS nf " +
+                "    ON ri.ingredientID = nf.ingredientID " +
+                "        AND nf.unitID = i.default_unit_id " +
+                "WHERE r.recipeID = ? " +
+                "GROUP BY r.recipeID, r.title";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, recipeID);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    // Using -1 for ingredientID and unitID since this represents recipe totals
+                    return new NutritionFacts(
+                        -1L, 
+                        -1,
+                        rs.getFloat("total_calories"),
+                        rs.getFloat("total_fat"),
+                        rs.getFloat("total_carbohydrates"),
+                        rs.getFloat("total_protein")
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error calculating nutrition facts for recipe {}: {}", recipeID, e.getMessage());
+        }
+        
+        // Return zeros if calculation fails
+        return new NutritionFacts(-1L, -1, 0f, 0f, 0f, 0f);
+    }
+
+    // Method for calculating multiple recipes at once for better performance
+    public static Map<Integer, NutritionFacts> calculateRecipesNutrition(List<Integer> recipeIDs) {
+        if (recipeIDs == null || recipeIDs.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        Map<Integer, NutritionFacts> nutritionMap = new HashMap<>();
+        Connection connection = DatabaseConnectionManager.getConnection();
+        
+        // Build the IN clause
+        String placeholders = String.join(",", Collections.nCopies(recipeIDs.size(), "?"));
+        String sql = "SELECT " +
+                "r.recipeID, " +
+                "r.title, " +
+                "COALESCE(SUM(ri.quantity * COALESCE(iu.conversionFactor, 1) / 100 * COALESCE(nf.calories, 0)), 0) AS total_calories, " +
+                "COALESCE(SUM(ri.quantity * COALESCE(iu.conversionFactor, 1) / 100 * COALESCE(nf.fat, 0)), 0) AS total_fat, " +
+                "COALESCE(SUM(ri.quantity * COALESCE(iu.conversionFactor, 1) / 100 * COALESCE(nf.carbohydrates, 0)), 0) AS total_carbohydrates, " +
+                "COALESCE(SUM(ri.quantity * COALESCE(iu.conversionFactor, 1) / 100 * COALESCE(nf.protein, 0)), 0) AS total_protein " +
+                "FROM recipes AS r " +
+                "LEFT JOIN recipe_ingredients AS ri " +
+                "    ON r.recipeID = ri.recipeID " +
+                "LEFT JOIN ingredients AS i " +
+                "    ON ri.ingredientID = i.id " +
+                "LEFT JOIN ingredient_units AS iu " +
+                "    ON ri.ingredientID = iu.ingredientID " +
+                "        AND iu.unitID = i.default_unit_id " +
+                "LEFT JOIN nutrition_facts AS nf " +
+                "    ON ri.ingredientID = nf.ingredientID " +
+                "        AND nf.unitID = i.default_unit_id " +
+                "WHERE r.recipeID IN (" + placeholders + ") " +
+                "GROUP BY r.recipeID, r.title";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            // Set all recipe IDs as parameters
+            for (int i = 0; i < recipeIDs.size(); i++) {
+                pstmt.setInt(i + 1, recipeIDs.get(i));
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int recipeID = rs.getInt("recipeID");
+                    nutritionMap.put(recipeID, new NutritionFacts(
+                        -1L,
+                        -1,
+                        rs.getFloat("total_calories"),
+                        rs.getFloat("total_fat"),
+                        rs.getFloat("total_carbohydrates"),
+                        rs.getFloat("total_protein")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error calculating nutrition facts for recipes: {}", e.getMessage());
+        }
+
+        return nutritionMap;
     }
 }

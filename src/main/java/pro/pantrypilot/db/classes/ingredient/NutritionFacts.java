@@ -25,7 +25,7 @@ public class NutritionFacts {
         this.protein = protein;
     }
     
-    public NutritionFacts(ResultSet rs) {
+    public NutritionFacts(ResultSet rs) throws SQLException {
         try {
             this.ingredientID = rs.getLong("ingredientID");
             this.unitID = rs.getInt("unitID");
@@ -35,7 +35,7 @@ public class NutritionFacts {
             this.protein = rs.getObject("protein") != null ? rs.getFloat("protein") : null;
         } catch (SQLException e) {
             logger.error("Error creating nutrition facts from ResultSet", e);
-            throw new RuntimeException(e);
+            throw e;
         }
     }
     
