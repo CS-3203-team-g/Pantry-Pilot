@@ -7,10 +7,12 @@ const RecipeIngredientHandlers = {
         const saveBtn = document.getElementById("saveIngredientBtn");
         if (saveBtn && !saveBtn.dataset.handlerInitialized) {
             saveBtn.addEventListener("click", function(event) {
+                console.log('DEBUG - saveIngredientBtn clicked');
                 event.preventDefault();
                 event.stopPropagation();
                 
                 if (this.dataset.processing === 'true') {
+                    console.log('DEBUG - Already processing, ignoring click');
                     return;
                 }
                 this.dataset.processing = 'true';
@@ -21,26 +23,39 @@ const RecipeIngredientHandlers = {
                     const unitName = document.getElementById("unit")?.value;
                     const editingIndex = document.getElementById("editingIngredientIndex")?.value;
                     
+                    console.log('DEBUG - Form values:', { ingredientName, quantity, unitName, editingIndex });
+                    
                     if (!ingredientName || !quantity || !unitName) {
+                        console.log('DEBUG - Missing required fields');
                         alert("Please enter ingredient name, quantity, and unit.");
                         return;
                     }
-
+                    
                     const parsedQuantity = parseFloat(quantity);
                     if (isNaN(parsedQuantity)) {
+                        console.log('DEBUG - Invalid quantity format');
                         alert("Please enter a valid number for quantity.");
                         return;
                     }
 
-                    RecipeData.addOrUpdateIngredientInCurrentRecipe(
+                    console.log('DEBUG - Calling addOrUpdateIngredientInCurrentRecipe');
+                    const result = RecipeData.addOrUpdateIngredientInCurrentRecipe(
                         ingredientName, 
                         parsedQuantity, 
                         unitName, 
                         parseInt(editingIndex)
                     );
+                    console.log('DEBUG - Result from addOrUpdateIngredientInCurrentRecipe:', result);
                     
-                    RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
+                    // REMOVED: Don't reload the entire recipe form as it resets draftRecipeIngredients
+                    // RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
+                    
+                    // Just update the recipe preview
+                    console.log('DEBUG - Calling renderRecipePreview directly');
                     RecipeRenderUI.renderRecipePreview();
+                    
+                    // Clear the ingredient form without reloading the recipe
+                    console.log('DEBUG - Calling clearIngredientForm');
                     RecipeIngredientsUI.clearIngredientForm();
                 } finally {
                     this.dataset.processing = 'false';
@@ -58,7 +73,11 @@ const RecipeIngredientHandlers = {
             
             if (ingredientName && !isNaN(quantity) && unitName) {
                 RecipeData.addOrUpdateIngredientInCurrentRecipe(ingredientName, quantity, unitName);
-                RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
+                
+                // REMOVED: Don't reload the entire recipe form
+                // RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
+                
+                // Just update the recipe preview
                 RecipeRenderUI.renderRecipePreview();
             }
             
@@ -80,7 +99,11 @@ const RecipeIngredientHandlers = {
             RecipeData.addOrUpdateIngredientInCurrentRecipe(ingredientName, quantity, unitName, editingIndex);
             
             document.getElementById("editingIngredientIndex").value = "-1";
-            RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
+            
+            // REMOVED: Don't reload the entire recipe form
+            // RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
+            
+            // Just update the recipe preview
             RecipeRenderUI.renderRecipePreview();
             
             document.getElementById("ingredientName").value = '';
@@ -105,7 +128,10 @@ const RecipeIngredientHandlers = {
             document.getElementById("quantity").value = '';
             document.getElementById("unit").value = '';
             
-            RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
+            // REMOVED: Don't reload the entire recipe form
+            // RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
+            
+            // Just update the recipe preview
             RecipeRenderUI.renderRecipePreview();
         });
 

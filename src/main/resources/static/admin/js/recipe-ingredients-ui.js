@@ -95,18 +95,36 @@ const RecipeIngredientsUI = {
     },
 
     renderIngredientsList(recipe) {
+        console.log('DEBUG - renderIngredientsList called with recipe:', recipe);
         const ingredientsList = document.getElementById("ingredientsList");
+        
+        if (!ingredientsList) {
+            console.error('DEBUG - ingredientsList element not found!');
+            return;
+        }
+        
         ingredientsList.innerHTML = '';
         
-        if (!recipe || !recipe.recipeID) return;
+        if (!recipe || !recipe.recipeID) {
+            console.log('DEBUG - No valid recipe or recipeID, returning');
+            return;
+        }
         
         // Get ingredients for this recipe from recipeIngredients array
         const ingredients = RecipeData.getIngredientsForRecipe(recipe.recipeID);
+        console.log('DEBUG - Got ingredients for rendering:', ingredients);
+        
+        if (!ingredients || ingredients.length === 0) {
+            console.log('DEBUG - No ingredients found for this recipe');
+            ingredientsList.innerHTML = '<div class="alert alert-light">No ingredients added yet. Add ingredients using the form below.</div>';
+            return;
+        }
         
         ingredients.forEach((ing, idx) => {
             let ingredientObj = RecipeData.data.ingredients.find(i => i.ingredientID === ing.ingredientID);
             let ingredientName = ingredientObj ? ingredientObj.ingredientName : "Unknown Ingredient";
             
+            console.log(`DEBUG - Rendering ingredient ${idx}:`, {ing, ingredientName});
             const ingItem = document.createElement("div");
             ingItem.className = "mb-2 p-2 border-bottom d-flex justify-content-between align-items-center ingredient-item";
             ingItem.innerHTML = `
@@ -146,6 +164,7 @@ const RecipeIngredientsUI = {
             });
 
             ingredientsList.appendChild(ingItem);
+            console.log('DEBUG - Added ingredient item to DOM');
         });
     }
 };

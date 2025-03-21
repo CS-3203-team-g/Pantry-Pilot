@@ -42,7 +42,13 @@ const RecipeDataIngredients = {
 
     addIngredientToCurrentRecipe(ingredientID, quantity, unitName) {
         const recipe = RecipeDataRecipes.getCurrentRecipe();
-        if (!recipe || !recipe.recipeID) return;
+        console.log('DEBUG - addIngredientToCurrentRecipe called with:', { ingredientID, quantity, unitName });
+        console.log('DEBUG - Current recipe:', recipe);
+        
+        if (!recipe || !recipe.recipeID) {
+            console.error('DEBUG - No valid recipe or recipeID found');
+            return;
+        }
         
         const unitID = RecipeDataUnits.getUnitIDByName(unitName);
         const newIngredient = {
@@ -53,19 +59,42 @@ const RecipeDataIngredients = {
             unitID
         };
         
+        console.log('DEBUG - New ingredient to add:', newIngredient);
         RecipeDataCore.logIngredientsState("Before Add");
         
         if (RecipeDataCore.draftRecipe && RecipeDataCore.draftRecipe.recipeID === recipe.recipeID) {
+            // Initialize draftRecipeIngredients if it doesn't exist
+            if (!RecipeDataCore.draftRecipeIngredients) {
+                console.log('DEBUG - Initializing empty draftRecipeIngredients array');
+                RecipeDataCore.draftRecipeIngredients = [];
+            }
             RecipeDataCore.draftRecipeIngredients.push(newIngredient);
+            console.log('DEBUG - Added to draftRecipeIngredients, new length:', RecipeDataCore.draftRecipeIngredients.length);
         } else {
             if (!RecipeDataCore.data.recipeIngredients) {
+                console.log('DEBUG - Initializing empty recipeIngredients array');
                 RecipeDataCore.data.recipeIngredients = [];
             }
             RecipeDataCore.data.recipeIngredients.push(newIngredient);
+            console.log('DEBUG - Added to data.recipeIngredients, new length:', RecipeDataCore.data.recipeIngredients.length);
             RecipeDataCore.updateJsonEditor();
         }
         
         RecipeDataCore.logIngredientsState("After Add");
+        
+        // Update the UI after adding an ingredient
+        console.log('DEBUG - About to update UI after adding ingredient');
+        if (recipe) {
+            // Re-render the ingredients list
+            console.log('DEBUG - Calling renderIngredientsList');
+            RecipeIngredientsUI.renderIngredientsList(recipe);
+            // Update the recipe preview
+            console.log('DEBUG - Calling renderRecipePreview');
+            RecipeRenderUI.renderRecipePreview();
+            // Update the conversion factors list
+            console.log('DEBUG - Calling renderConversionFactorsList');
+            RecipeConversionUI.renderConversionFactorsList();
+        }
     },
 
     removeIngredientFromCurrentRecipe(index) {
@@ -99,6 +128,9 @@ const RecipeDataIngredients = {
 
     addOrUpdateIngredientInCurrentRecipe(ingredientName, quantity, unitName, editingIndex = -1) {
         const recipe = RecipeDataRecipes.getCurrentRecipe();
+        console.log('DEBUG - addOrUpdateIngredientInCurrentRecipe called with:', { ingredientName, quantity, unitName, editingIndex });
+        console.log('DEBUG - Current recipe:', recipe);
+        
         if (!recipe || !recipe.recipeID) {
             console.error("Cannot update ingredient: No active recipe");
             return;
@@ -122,13 +154,23 @@ const RecipeDataIngredients = {
             unitName,
             unitID
         };
+        
+        console.log('DEBUG - Ingredient data to add/update:', ingredientData);
 
         if (RecipeDataCore.draftRecipe && RecipeDataCore.draftRecipe.recipeID === recipe.recipeID) {
+            if (!RecipeDataCore.draftRecipeIngredients) {
+                console.log('DEBUG - Initializing empty draftRecipeIngredients array');
+                RecipeDataCore.draftRecipeIngredients = [];
+            }
+            
             if (editingIndex >= 0 && editingIndex < RecipeDataCore.draftRecipeIngredients.length) {
+                console.log('DEBUG - Updating existing ingredient at index:', editingIndex);
                 RecipeDataCore.draftRecipeIngredients[editingIndex] = ingredientData;
             } else {
+                console.log('DEBUG - Adding new ingredient to draftRecipeIngredients');
                 RecipeDataCore.draftRecipeIngredients.push(ingredientData);
             }
+            console.log('DEBUG - Current draftRecipeIngredients:', RecipeDataCore.draftRecipeIngredients);
         } else {
             if (!RecipeDataCore.data.recipeIngredients) {
                 RecipeDataCore.data.recipeIngredients = [];
@@ -158,6 +200,21 @@ const RecipeDataIngredients = {
         }
         
         RecipeDataCore.logIngredientsState("After Update/Add");
+        
+        // Update the UI after adding or updating an ingredient
+        console.log('DEBUG - About to update UI after adding/updating ingredient');
+        if (recipe) {
+            // Re-render the ingredients list
+            console.log('DEBUG - Calling renderIngredientsList with recipe:', recipe);
+            RecipeIngredientsUI.renderIngredientsList(recipe);
+            // Update the recipe preview
+            console.log('DEBUG - Calling renderRecipePreview');
+            RecipeRenderUI.renderRecipePreview();
+            // Update the conversion factors list since ingredients affect it
+            console.log('DEBUG - Calling renderConversionFactorsList');
+            RecipeConversionUI.renderConversionFactorsList();
+        }
+        
         return ingredientData;
     }
 };
