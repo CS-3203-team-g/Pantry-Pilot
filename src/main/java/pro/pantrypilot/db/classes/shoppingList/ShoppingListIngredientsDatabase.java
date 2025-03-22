@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.pantrypilot.db.DatabaseConnectionManager;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +17,7 @@ public class ShoppingListIngredientsDatabase {
         String createShoppingListIngredientsTableSQL = "CREATE TABLE IF NOT EXISTS pantry_pilot.shopping_list_ingredients (\n"
                 + "    shoppingListID INT NOT NULL,\n"
                 + "    ingredientID BIGINT UNSIGNED NOT NULL,\n"
-                + "    quantity INT NOT NULL,\n"
+                + "    quantity DECIMAL(7,2) NOT NULL,\n"
                 + "    unitID INT NULL,\n"
                 + "    PRIMARY KEY (shoppingListID, ingredientID),\n"
                 + "    FOREIGN KEY (shoppingListID) REFERENCES pantry_pilot.shopping_lists(shoppingListID) ON DELETE CASCADE,\n"
@@ -32,14 +33,14 @@ public class ShoppingListIngredientsDatabase {
         }
     }
 
-    public static boolean addIngredientToShoppingList(int shoppingListID, int ingredientID, int quantity, String unit) {
+    public static boolean addIngredientToShoppingList(int shoppingListID, int ingredientID, BigDecimal quantity, String unit) {
         String addIngredientSQL = "INSERT INTO shopping_list_ingredients (shoppingListID, ingredientID, quantity, unit) " +
                 "VALUES (?, ?, ?, ?) " +
                 "ON DUPLICATE KEY UPDATE quantity = shopping_list_ingredients.quantity + VALUES(quantity)";
         try (PreparedStatement preparedStatement = DatabaseConnectionManager.getConnection().prepareStatement(addIngredientSQL)) {
             preparedStatement.setInt(1, shoppingListID);
             preparedStatement.setInt(2, ingredientID);
-            preparedStatement.setInt(3, quantity);
+            preparedStatement.setBigDecimal(3, quantity);
             preparedStatement.setString(4, unit);
             int rowsAffected = preparedStatement.executeUpdate();
             return rowsAffected > 0;
@@ -49,6 +50,10 @@ public class ShoppingListIngredientsDatabase {
         }
     }
 
+    // For backward compatibility
+    public static boolean addIngredientToShoppingList(int shoppingListID, int ingredientID, int quantity, String unit) {
+        return addIngredientToShoppingList(shoppingListID, ingredientID, new BigDecimal(quantity), unit);
+    }
 
     public static List<ShoppingListIngredient> getIngredientsForShoppingList(int shoppingListID) {
         String getIngredientsSQL = "SELECT * FROM shopping_list_ingredients WHERE shoppingListID = ?";
@@ -58,7 +63,7 @@ public class ShoppingListIngredientsDatabase {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 while (resultSet.next()) {
                     int ingredientID = resultSet.getInt("ingredientID");
-                    int quantity = resultSet.getInt("quantity");
+                    BigDecimal quantity = resultSet.getBigDecimal("quantity");
                     String unit = resultSet.getString("unit");
                     ShoppingListIngredient ingredient = new ShoppingListIngredient(shoppingListID, ingredientID, quantity, unit);
                     ingredients.add(ingredient);
@@ -70,12 +75,12 @@ public class ShoppingListIngredientsDatabase {
         return ingredients;
     }
 
-    public static boolean removeIngredientFromShoppingList(int shoppingListID, int ingredientID, int quantity, String unit) {
+    public static boolean removeIngredientFromShoppingList(int shoppingListID, int ingredientID, BigDecimal quantity, String unit) {
         String removeIngredientSQL = "DELETE FROM shopping_list_ingredients WHERE shoppingListID = ? AND ingredientID = ? AND quantity = ? AND unit = ? LIMIT 1";
         try (PreparedStatement preparedStatement = DatabaseConnectionManager.getConnection().prepareStatement(removeIngredientSQL)) {
             preparedStatement.setInt(1, shoppingListID);
             preparedStatement.setInt(2, ingredientID);
-            preparedStatement.setInt(3, quantity);
+            preparedStatement.setBigDecimal(3, quantity);
             preparedStatement.setString(4, unit);
             int rowsAffected = preparedStatement.executeUpdate();
             return rowsAffected > 0;
@@ -83,6 +88,11 @@ public class ShoppingListIngredientsDatabase {
             logger.error("Error removing ingredient from shopping list", e);
             return false;
         }
+    }
+
+    // For backward compatibility
+    public static boolean removeIngredientFromShoppingList(int shoppingListID, int ingredientID, int quantity, String unit) {
+        return removeIngredientFromShoppingList(shoppingListID, ingredientID, new BigDecimal(quantity), unit);
     }
 
     /**
@@ -98,17 +108,13 @@ public class ShoppingListIngredientsDatabase {
                 "WHERE recipeID = ? " +
                 "GROUP BY ingredientID, unit " +
                 "ON DUPLICATE KEY UPDATE quantity = shopping_list_ingredients.quantity + VALUES(quantity)";
-
         try (Connection conn = DatabaseConnectionManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             // Set the shoppingListID for the insert and recipeID for the SELECT clause
             pstmt.setInt(1, shoppingListId);
             pstmt.setInt(2, recipeId);
-
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
-
         } catch (SQLException e) {
             // Handle any SQL errors here
             e.printStackTrace();

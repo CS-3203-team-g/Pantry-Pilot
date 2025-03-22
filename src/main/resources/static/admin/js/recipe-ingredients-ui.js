@@ -89,7 +89,18 @@ const RecipeIngredientsUI = {
     loadIngredientIntoForm(ingredient, index) {
         const ingredientObj = RecipeData.data.ingredients.find(i => i.ingredientID === ingredient.ingredientID);
         document.getElementById("ingredientName").value = ingredientObj?.ingredientName || '';
-        document.getElementById("quantity").value = ingredient.quantity || '';
+        
+        // Format the quantity to show decimals correctly
+        let formattedQuantity = ingredient.quantity;
+        if (ingredient.quantity !== null && ingredient.quantity !== undefined) {
+            if (ingredient.quantity % 1 === 0) {
+                formattedQuantity = Math.floor(ingredient.quantity);
+            } else {
+                formattedQuantity = parseFloat(ingredient.quantity.toFixed(2));
+            }
+        }
+        
+        document.getElementById("quantity").value = formattedQuantity || '';
         document.getElementById("unit").value = ingredient.unitName || '';
         document.getElementById("editingIngredientIndex").value = index;
     },
@@ -124,12 +135,15 @@ const RecipeIngredientsUI = {
             let ingredientObj = RecipeData.data.ingredients.find(i => i.ingredientID === ing.ingredientID);
             let ingredientName = ingredientObj ? ingredientObj.ingredientName : "Unknown Ingredient";
             
+            // Use the same fraction display as the preview
+            const formattedQuantity = RecipeRenderUI.decimalToFraction(ing.quantity);
+            
             console.log(`DEBUG - Rendering ingredient ${idx}:`, {ing, ingredientName});
             const ingItem = document.createElement("div");
             ingItem.className = "mb-2 p-2 border-bottom d-flex justify-content-between align-items-center ingredient-item";
             ingItem.innerHTML = `
                 <div class="ingredient-info" data-index="${idx}">
-                    <strong>${ing.quantity} ${ing.unitName || ''}</strong> of ${ingredientName}
+                    <strong>${formattedQuantity} ${ing.unitName || ''}</strong> of ${ingredientName}
                 </div>
                 <div class="ingredient-actions">
                     <button type="button" class="btn btn-sm btn-outline-danger remove-ingredient" data-index="${idx}">

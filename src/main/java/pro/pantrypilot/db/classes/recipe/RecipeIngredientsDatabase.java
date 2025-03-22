@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.pantrypilot.db.DatabaseConnectionManager;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -21,7 +22,7 @@ public class RecipeIngredientsDatabase {
         String createRecipeIngredientsTableSQL = "CREATE TABLE IF NOT EXISTS pantry_pilot.recipe_ingredients (\n"
                 + "    recipeID INT NOT NULL,\n"
                 + "    ingredientID BIGINT UNSIGNED NOT NULL,\n"
-                + "    quantity INT NOT NULL,\n"
+                + "    quantity DECIMAL(7,2) NOT NULL,\n"
                 + "    unitID INT NULL,\n"
                 + "    PRIMARY KEY (recipeID, ingredientID),\n"
                 + "    FOREIGN KEY (recipeID) REFERENCES pantry_pilot.recipes(recipeID) ON DELETE CASCADE,\n"
@@ -48,7 +49,7 @@ public class RecipeIngredientsDatabase {
             while (resultSet.next()) {
                 int recipeID = resultSet.getInt("recipeID");
                 long ingredientID = resultSet.getLong("ingredientID");
-                int quantity = resultSet.getInt("quantity");
+                BigDecimal quantity = resultSet.getBigDecimal("quantity");
                 
                 // Handle null unitID
                 Integer unitID = null;
@@ -76,7 +77,7 @@ public class RecipeIngredientsDatabase {
                 for (RecipeIngredient recipeIngredient : recipeIngredients) {
                     pstmt.setInt(1, recipeIngredient.getRecipeID());
                     pstmt.setLong(2, recipeIngredient.getIngredientID());
-                    pstmt.setInt(3, recipeIngredient.getQuantity());
+                    pstmt.setBigDecimal(3, recipeIngredient.getQuantity());
                     
                     // Handle null unitID
                     if (recipeIngredient.getUnitID() != null) {

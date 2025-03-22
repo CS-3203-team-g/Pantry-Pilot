@@ -10,6 +10,7 @@ import pro.pantrypilot.db.classes.unit.UnitsDatabase;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.List;
+import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -90,7 +91,7 @@ class RecipeDatabaseTest {
         
         RecipeIngredient ingredient = recipe.getIngredients().get(0);
         assertEquals("semisweet chocolate chips", ingredient.getIngredientName());
-        assertEquals(1, ingredient.getQuantity());
+        assertEquals(0, new BigDecimal("1.0").compareTo(ingredient.getQuantity()), "Quantity should be 1.0");
         assertEquals("cup", ingredient.getUnitName());
         assertEquals(1, ingredient.getUnitID());
     }
@@ -106,7 +107,7 @@ class RecipeDatabaseTest {
         
         RecipeIngredient ingredient = recipe.getIngredients().get(0);
         assertEquals("semisweet chocolate chips", ingredient.getIngredientName());
-        assertEquals(1, ingredient.getQuantity());
+        assertEquals(0, new BigDecimal("1.0").compareTo(ingredient.getQuantity()), "Quantity should be 1.0");
         assertEquals("cup", ingredient.getUnitName());
         assertEquals(1, ingredient.getUnitID());
     }

@@ -1,26 +1,37 @@
 package pro.pantrypilot.db.classes.shoppingList;
 
-public class ShoppingListIngredient {
+import java.math.BigDecimal;
 
+public class ShoppingListIngredient {
     private final int shoppingListID;
     private final int ingredientID;
-    private final int quantity;
+    private final BigDecimal quantity; // Changed from int to BigDecimal
     private final String unit;
     private String ingredientName;
 
-    public ShoppingListIngredient(int shoppingListID, int ingredientID, int quantity, String unit) {
+    public ShoppingListIngredient(int shoppingListID, int ingredientID, BigDecimal quantity, String unit) {
         this.shoppingListID = shoppingListID;
         this.ingredientID = ingredientID;
         this.quantity = quantity;
         this.unit = unit;
     }
 
-    public ShoppingListIngredient(int shoppingListID, int ingredientID, int quantity, String unit, String ingredientName) {
+    public ShoppingListIngredient(int shoppingListID, int ingredientID, BigDecimal quantity, String unit, String ingredientName) {
         this.shoppingListID = shoppingListID;
         this.ingredientID = ingredientID;
         this.quantity = quantity;
         this.unit = unit;
         this.ingredientName = ingredientName;
+    }
+    
+    // For backward compatibility
+    public ShoppingListIngredient(int shoppingListID, int ingredientID, int quantity, String unit) {
+        this(shoppingListID, ingredientID, new BigDecimal(quantity), unit);
+    }
+    
+    // For backward compatibility
+    public ShoppingListIngredient(int shoppingListID, int ingredientID, int quantity, String unit, String ingredientName) {
+        this(shoppingListID, ingredientID, new BigDecimal(quantity), unit, ingredientName);
     }
 
     public int getShoppingListID() {
@@ -31,8 +42,13 @@ public class ShoppingListIngredient {
         return ingredientID;
     }
 
-    public int getQuantity() {
+    public BigDecimal getQuantity() {
         return quantity;
+    }
+    
+    // For backward compatibility
+    public int getQuantityAsInt() {
+        return quantity.intValue();
     }
 
     public String getUnit() {

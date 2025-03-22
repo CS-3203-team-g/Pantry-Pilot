@@ -1,4 +1,54 @@
 const RecipeIngredientHandlers = {
+    // Helper function to parse mixed numbers and fractions
+    parseQuantityInput(input) {
+        if (!input) return NaN;
+        
+        // Clean up the input
+        input = input.trim();
+        
+        // If it's a simple decimal number
+        const simpleNumber = parseFloat(input);
+        if (!isNaN(simpleNumber) && !input.includes(' ') && !input.includes('/')) {
+            return simpleNumber;
+        }
+        
+        // Handle mixed numbers (e.g., "1 3/4")
+        if (input.includes(' ')) {
+            const parts = input.split(' ');
+            if (parts.length !== 2) return NaN;
+            
+            const whole = parseInt(parts[0]);
+            const fractionPart = parts[1];
+            
+            if (isNaN(whole) || !fractionPart.includes('/')) return NaN;
+            
+            const fractionParts = fractionPart.split('/');
+            if (fractionParts.length !== 2) return NaN;
+            
+            const numerator = parseInt(fractionParts[0]);
+            const denominator = parseInt(fractionParts[1]);
+            
+            if (isNaN(numerator) || isNaN(denominator) || denominator === 0) return NaN;
+            
+            return whole + (numerator / denominator);
+        }
+        
+        // Handle simple fractions (e.g., "3/4")
+        if (input.includes('/')) {
+            const parts = input.split('/');
+            if (parts.length !== 2) return NaN;
+            
+            const numerator = parseInt(parts[0]);
+            const denominator = parseInt(parts[1]);
+            
+            if (isNaN(numerator) || isNaN(denominator) || denominator === 0) return NaN;
+            
+            return numerator / denominator;
+        }
+        
+        return NaN;
+    },
+
     initIngredientHandlers() {
         document.getElementById("ingredientName")?.addEventListener("input", () => RecipeIngredientsUI.updateUnitSuggestions());
         document.getElementById("ingredientName")?.addEventListener("blur", () => RecipeIngredientsUI.updateUnitSuggestions());
@@ -19,25 +69,27 @@ const RecipeIngredientHandlers = {
                 
                 try {
                     const ingredientName = document.getElementById("ingredientName")?.value;
-                    const quantity = document.getElementById("quantity")?.value;
+                    const quantityInput = document.getElementById("quantity")?.value;
                     const unitName = document.getElementById("unit")?.value;
                     const editingIndex = document.getElementById("editingIngredientIndex")?.value;
                     
-                    console.log('DEBUG - Form values:', { ingredientName, quantity, unitName, editingIndex });
+                    console.log('DEBUG - Form values:', { ingredientName, quantityInput, unitName, editingIndex });
                     
-                    if (!ingredientName || !quantity || !unitName) {
+                    if (!ingredientName || !quantityInput || !unitName) {
                         console.log('DEBUG - Missing required fields');
                         alert("Please enter ingredient name, quantity, and unit.");
                         return;
                     }
                     
-                    const parsedQuantity = parseFloat(quantity);
+                    // Parse the quantity using our new helper function
+                    const parsedQuantity = RecipeIngredientHandlers.parseQuantityInput(quantityInput);
                     if (isNaN(parsedQuantity)) {
                         console.log('DEBUG - Invalid quantity format');
-                        alert("Please enter a valid number for quantity.");
+                        alert("Please enter a valid number, fraction (like 3/4), or mixed number (like 1 3/4).");
                         return;
                     }
 
+                    console.log('DEBUG - Parsed quantity:', parsedQuantity);
                     console.log('DEBUG - Calling addOrUpdateIngredientInCurrentRecipe');
                     const result = RecipeData.addOrUpdateIngredientInCurrentRecipe(
                         ingredientName, 
@@ -68,11 +120,14 @@ const RecipeIngredientHandlers = {
         // New Ingredient Button
         document.getElementById("newIngredientBtn")?.addEventListener("click", function() {
             const ingredientName = document.getElementById("ingredientName").value;
-            const quantity = parseFloat(document.getElementById("quantity").value);
+            const quantityInput = document.getElementById("quantity").value;
             const unitName = document.getElementById("unit").value;
             
-            if (ingredientName && !isNaN(quantity) && unitName) {
-                RecipeData.addOrUpdateIngredientInCurrentRecipe(ingredientName, quantity, unitName);
+            // Parse the quantity using our new helper function
+            const parsedQuantity = RecipeIngredientHandlers.parseQuantityInput(quantityInput);
+            
+            if (ingredientName && !isNaN(parsedQuantity) && unitName) {
+                RecipeData.addOrUpdateIngredientInCurrentRecipe(ingredientName, parsedQuantity, unitName);
                 
                 // REMOVED: Don't reload the entire recipe form
                 // RecipeUI.loadRecipeIntoForm(RecipeData.getCurrentRecipe());
@@ -87,16 +142,19 @@ const RecipeIngredientHandlers = {
         // Save & New Ingredient Button
         document.getElementById("saveAndNewIngredientBtn")?.addEventListener("click", function() {
             const ingredientName = document.getElementById("ingredientName").value;
-            const quantity = parseFloat(document.getElementById("quantity").value);
+            const quantityInput = document.getElementById("quantity").value;
             const unitName = document.getElementById("unit").value;
             const editingIndex = parseInt(document.getElementById("editingIngredientIndex").value);
             
-            if (!ingredientName || isNaN(quantity) || !unitName) {
+            // Parse the quantity using our new helper function
+            const parsedQuantity = RecipeIngredientHandlers.parseQuantityInput(quantityInput);
+            
+            if (!ingredientName || isNaN(parsedQuantity) || !unitName) {
                 alert("Please enter ingredient name, quantity, and unit.");
                 return;
             }
 
-            RecipeData.addOrUpdateIngredientInCurrentRecipe(ingredientName, quantity, unitName, editingIndex);
+            RecipeData.addOrUpdateIngredientInCurrentRecipe(ingredientName, parsedQuantity, unitName, editingIndex);
             
             document.getElementById("editingIngredientIndex").value = "-1";
             
@@ -113,16 +171,19 @@ const RecipeIngredientHandlers = {
         // Add Ingredient Button (legacy - kept for backward compatibility)
         document.getElementById("addIngredientBtn")?.addEventListener("click", function() {
             const ingredientName = document.getElementById("ingredientName").value;
-            const quantity = parseFloat(document.getElementById("quantity").value);
+            const quantityInput = document.getElementById("quantity").value;
             const unitName = document.getElementById("unit").value;
             
-            if (!ingredientName || isNaN(quantity) || !unitName) {
+            // Parse the quantity using our new helper function
+            const parsedQuantity = RecipeIngredientHandlers.parseQuantityInput(quantityInput);
+            
+            if (!ingredientName || isNaN(parsedQuantity) || !unitName) {
                 alert("Please enter ingredient name, quantity, and unit.");
                 return;
             }
 
             const ingredientID = RecipeData.addOrGetIngredient(ingredientName, unitName);
-            RecipeData.addIngredientToCurrentRecipe(ingredientID, quantity, unitName);
+            RecipeData.addIngredientToCurrentRecipe(ingredientID, parsedQuantity, unitName);
             
             document.getElementById("ingredientName").value = '';
             document.getElementById("quantity").value = '';

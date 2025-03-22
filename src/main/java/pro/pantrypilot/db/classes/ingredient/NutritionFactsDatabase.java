@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.pantrypilot.db.DatabaseConnectionManager;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -148,7 +149,7 @@ public class NutritionFactsDatabase {
      * @param unitID The unit ID of the ingredient
      * @return A NutritionFacts object with nutritional values adjusted by conversion factor, or null if data is not available
      */
-    public static NutritionFacts calculateNutritionFacts(long ingredientID, float quantity, Integer unitID) {
+    public static NutritionFacts calculateNutritionFacts(long ingredientID, BigDecimal quantity, Integer unitID) {
         if (unitID == null) return null;
         
         // Get reference nutrition facts (usually stored per gram)
@@ -161,15 +162,24 @@ public class NutritionFactsDatabase {
         // Get conversion factor from ingredient_units table
         float conversionFactor = getConversionFactor(ingredientID, unitID);
         
-        // Calculate adjusted nutritional values
-        Float calories = baseFacts.getCalories() != null ? baseFacts.getCalories() * quantity * conversionFactor : null;
-        Float fat = baseFacts.getFat() != null ? baseFacts.getFat() * quantity * conversionFactor : null;
-        Float carbohydrates = baseFacts.getCarbohydrates() != null ? baseFacts.getCarbohydrates() * quantity * conversionFactor : null;
-        Float protein = baseFacts.getProtein() != null ? baseFacts.getProtein() * quantity * conversionFactor : null;
+        // Calculate adjusted nutritional values using BigDecimal for more precise math
+        Float calories = baseFacts.getCalories() != null ? 
+                baseFacts.getCalories() * quantity.floatValue() * conversionFactor : null;
+        Float fat = baseFacts.getFat() != null ? 
+                baseFacts.getFat() * quantity.floatValue() * conversionFactor : null;
+        Float carbohydrates = baseFacts.getCarbohydrates() != null ? 
+                baseFacts.getCarbohydrates() * quantity.floatValue() * conversionFactor : null;
+        Float protein = baseFacts.getProtein() != null ? 
+                baseFacts.getProtein() * quantity.floatValue() * conversionFactor : null;
         
         return new NutritionFacts(ingredientID, unitID, calories, fat, carbohydrates, protein);
     }
     
+    // For backward compatibility
+    public static NutritionFacts calculateNutritionFacts(long ingredientID, float quantity, Integer unitID) {
+        return calculateNutritionFacts(ingredientID, new BigDecimal(quantity), unitID);
+    }
+
     /**
      * Get the conversion factor for an ingredient-unit combination
      * 
@@ -206,8 +216,8 @@ public class NutritionFactsDatabase {
      * @param unitIDs List of unit IDs (same order as ingredientIDs)
      * @return Map of nutrition facts by ingredient ID
      */
-    public static Map<String, NutritionFacts> calculateNutritionFactsForIngredients(
-            List<Long> ingredientIDs, List<Float> quantities, List<Integer> unitIDs) {
+    public static Map<String, NutritionFacts> calculateNutritionFactsForIngredientsWithBigDecimal(
+            List<Long> ingredientIDs, List<BigDecimal> quantities, List<Integer> unitIDs) {
             
         if (ingredientIDs == null || ingredientIDs.isEmpty() || 
             quantities == null || quantities.isEmpty() || 
@@ -220,7 +230,7 @@ public class NutritionFactsDatabase {
         
         for (int i = 0; i < ingredientIDs.size(); i++) {
             Long ingredientID = ingredientIDs.get(i);
-            Float quantity = quantities.get(i);
+            BigDecimal quantity = quantities.get(i);
             Integer unitID = unitIDs.get(i);
             
             if (ingredientID == null || quantity == null || unitID == null) continue;
@@ -233,6 +243,23 @@ public class NutritionFactsDatabase {
         }
         
         return nutritionMap;
+    }
+    
+    // For backward compatibility
+    public static Map<String, NutritionFacts> calculateNutritionFactsForIngredients(
+            List<Long> ingredientIDs, List<BigDecimal> quantities, List<Integer> unitIDs) {
+        
+        if (ingredientIDs == null || quantities == null || unitIDs == null) {
+            return new HashMap<>();
+        }
+        
+        // Convert Float list to BigDecimal list
+        List<BigDecimal> decimalQuantities = new ArrayList<>();
+        for (BigDecimal qty : quantities) {
+            decimalQuantities.add(qty == null ? null : new BigDecimal(String.valueOf(qty)));
+        }
+        
+        return calculateNutritionFactsForIngredientsWithBigDecimal(ingredientIDs, decimalQuantities, unitIDs);
     }
 
     public static Map<String, NutritionFacts> getNutritionFactsForIngredients(List<Long> ingredientIDs, List<Integer> unitIDs) {
@@ -282,6 +309,7 @@ public class NutritionFactsDatabase {
      */
     public static NutritionFacts calculateRecipeNutrition(int recipeID) {
         Connection connection = DatabaseConnectionManager.getConnection();
+        // Modified SQL to properly handle DECIMAL quantity type
         String sql = "SELECT recipeID, title, " +
                 "SUM(total_calories) AS total_calories, " +
                 "SUM(total_fat) AS total_fat, " +
@@ -289,7 +317,7 @@ public class NutritionFactsDatabase {
                 "SUM(total_protein) AS total_protein " +
                 "FROM ( " +
                 "    SELECT r.recipeID, r.title, " +
-                "    ((ri.quantity * " +
+                "    ((CAST(ri.quantity AS DECIMAL(10,2)) * " +
                 "      COALESCE( " +
                 "         (SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
                 "           WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
@@ -304,7 +332,7 @@ public class NutritionFactsDatabase {
                 "           WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
                 "         0 " +
                 "      ) AS total_calories, " +
-                "    ((ri.quantity * " +
+                "    ((CAST(ri.quantity AS DECIMAL(10,2)) * " +
                 "      COALESCE( " +
                 "         (SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
                 "           WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
@@ -319,7 +347,7 @@ public class NutritionFactsDatabase {
                 "           WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
                 "         0 " +
                 "      ) AS total_fat, " +
-                "    ((ri.quantity * " +
+                "    ((CAST(ri.quantity AS DECIMAL(10,2)) * " +
                 "      COALESCE( " +
                 "         (SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
                 "           WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
@@ -334,7 +362,7 @@ public class NutritionFactsDatabase {
                 "           WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
                 "         0 " +
                 "      ) AS total_carbohydrates, " +
-                "    ((ri.quantity * " +
+                "    ((CAST(ri.quantity AS DECIMAL(10,2)) * " +
                 "      COALESCE( " +
                 "         (SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
                 "           WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
@@ -391,10 +419,11 @@ public class NutritionFactsDatabase {
         
         // Build the IN clause
         String placeholders = String.join(",", Collections.nCopies(recipeIDs.size(), "?"));
+        // Modified SQL to properly handle DECIMAL quantity type with explicit casting
         String sql = "SELECT " +
                 "r.recipeID, " +
                 "r.title, " +
-                "COALESCE(SUM(((ri.quantity * " +
+                "COALESCE(SUM(((CAST(ri.quantity AS DECIMAL(10,2)) * " +
                 "COALESCE((SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
                 "WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
                 "(SELECT iu2.conversionFactor FROM ingredient_units iu2 " +
@@ -405,7 +434,7 @@ public class NutritionFactsDatabase {
                 "(SELECT nf2.calories FROM nutrition_facts nf2 " +
                 "WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
                 "0)), 0) AS total_calories, " +
-                "COALESCE(SUM(((ri.quantity * " +
+                "COALESCE(SUM(((CAST(ri.quantity AS DECIMAL(10,2)) * " +
                 "COALESCE((SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
                 "WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
                 "(SELECT iu2.conversionFactor FROM ingredient_units iu2 " +
@@ -416,7 +445,7 @@ public class NutritionFactsDatabase {
                 "(SELECT nf2.fat FROM nutrition_facts nf2 " +
                 "WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
                 "0)), 0) AS total_fat, " +
-                "COALESCE(SUM(((ri.quantity * " +
+                "COALESCE(SUM(((CAST(ri.quantity AS DECIMAL(10,2)) * " +
                 "COALESCE((SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
                 "WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
                 "(SELECT iu2.conversionFactor FROM ingredient_units iu2 " +
@@ -427,7 +456,7 @@ public class NutritionFactsDatabase {
                 "(SELECT nf2.carbohydrates FROM nutrition_facts nf2 " +
                 "WHERE nf2.ingredientID = ri.ingredientID AND nf2.unitID = i.default_unit_id), " +
                 "0)), 0) AS total_carbohydrates, " +
-                "COALESCE(SUM(((ri.quantity * " +
+                "COALESCE(SUM(((CAST(ri.quantity AS DECIMAL(10,2)) * " +
                 "COALESCE((SELECT iu1.conversionFactor FROM ingredient_units iu1 " +
                 "WHERE iu1.ingredientID = ri.ingredientID AND iu1.unitID = ri.unitID), " +
                 "(SELECT iu2.conversionFactor FROM ingredient_units iu2 " +

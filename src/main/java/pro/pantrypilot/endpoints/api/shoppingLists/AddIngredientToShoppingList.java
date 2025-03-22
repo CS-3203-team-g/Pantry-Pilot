@@ -15,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
@@ -125,7 +126,7 @@ public class AddIngredientToShoppingList implements HttpHandler {
     private static class AddIngredientRequest {
         int shoppingListID;
         int ingredientID;
-        int quantity;
+        BigDecimal quantity; // Changed from int to BigDecimal
         String unit;
         String sessionID; // For backward compatibility
     }

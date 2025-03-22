@@ -2,6 +2,7 @@ package pro.pantrypilot.db.classes.recipe;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 
 class RecipeTest {
@@ -9,7 +10,7 @@ class RecipeTest {
     @Test
     void testConstructorAndGettersWithIngredients() {
         ArrayList<RecipeIngredient> ingredients = new ArrayList<>();
-        ingredients.add(new RecipeIngredient(1, 1, 2, 1, "flour", "cups"));
+        ingredients.add(new RecipeIngredient(1, 1, new BigDecimal("2.0"), 1, "flour", "cups"));
         
         Recipe recipe = new Recipe(1, "Test Recipe", "thumbnail.jpg", "Test instructions", ingredients, 4.5f);
         
@@ -37,7 +38,7 @@ class RecipeTest {
     void testSetIngredients() {
         Recipe recipe = new Recipe(1, "Test Recipe", "thumbnail.jpg", "Test instructions", 4.5f);
         ArrayList<RecipeIngredient> ingredients = new ArrayList<>();
-        ingredients.add(new RecipeIngredient(1, 1, 2, 1, "flour", "cups"));
+        ingredients.add(new RecipeIngredient(1, 1, new BigDecimal("2.0"), 1, "flour", "cups"));
         
         recipe.setIngredients(ingredients);
         assertEquals(ingredients, recipe.getIngredients());
@@ -46,7 +47,7 @@ class RecipeTest {
     @Test
     void testToString() {
         ArrayList<RecipeIngredient> ingredients = new ArrayList<>();
-        ingredients.add(new RecipeIngredient(1, 1, 2, 1, "flour", "cups"));
+        ingredients.add(new RecipeIngredient(1, 1, new BigDecimal("2.0"), 1, "flour", "cups"));
         Recipe recipe = new Recipe(1, "Test Recipe", "thumbnail.jpg", "Test instructions", ingredients, 4.5f);
         
         String expected = "Recipe{recipeID=1, title='Test Recipe', thumbnailUrl='thumbnail.jpg', " +

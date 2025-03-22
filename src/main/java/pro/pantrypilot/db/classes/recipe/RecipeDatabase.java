@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
 
 public class RecipeDatabase {
 
@@ -104,7 +105,8 @@ public class RecipeDatabase {
 
                     long ingredientID = rs.getLong("ingredientID");
                     String ingredientName = rs.getString("ingredient_name");
-                    int quantity = rs.getInt("quantity");
+                    // Change from int to BigDecimal for quantity
+                    BigDecimal quantity = rs.getBigDecimal("quantity");
 
                     // Handle null unitID
                     Integer unitID = null;
@@ -154,7 +156,8 @@ public class RecipeDatabase {
                         }
                         long ingredientID = rs.getLong("ingredientID");
                         String ingredientName = rs.getString("ingredient_name");
-                        int quantity = rs.getInt("quantity");
+                        // Change from int to BigDecimal for quantity
+                        BigDecimal quantity = rs.getBigDecimal("quantity");
 
                         // Handle null unitID
                         Integer unitID = null;

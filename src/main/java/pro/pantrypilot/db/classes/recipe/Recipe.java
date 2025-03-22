@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
 
 public class Recipe {
 
@@ -105,13 +106,13 @@ public class Recipe {
         }
         
         List<Long> ingredientIDs = new ArrayList<>();
-        List<Float> quantities = new ArrayList<>();
+        List<BigDecimal> quantities = new ArrayList<>();
         List<Integer> unitIDs = new ArrayList<>();
         
         for (RecipeIngredient ingredient : this.ingredients) {
             if (ingredient.getUnitID() != null) {
                 ingredientIDs.add(ingredient.getIngredientID());
-                quantities.add((float) ingredient.getQuantity());
+                quantities.add(ingredient.getQuantity()); // Now directly using BigDecimal without casting
                 unitIDs.add(ingredient.getUnitID());
             }
         }

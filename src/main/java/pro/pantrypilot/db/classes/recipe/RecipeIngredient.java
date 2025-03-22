@@ -2,7 +2,7 @@ package pro.pantrypilot.db.classes.recipe;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -12,19 +12,19 @@ public class RecipeIngredient {
 
     private final int recipeID;
     private final long ingredientID;
-    private final int quantity;
+    private final BigDecimal quantity; // Changed from int to BigDecimal to support fractional values
     private final Integer unitID; // Changed from String unit to Integer unitID
     private String ingredientName;
     private String unitName; // Added to store the unit name for display purposes
 
-    public RecipeIngredient(int recipeID, long ingredientID, int quantity, Integer unitID) {
+    public RecipeIngredient(int recipeID, long ingredientID, BigDecimal quantity, Integer unitID) {
         this.recipeID = recipeID;
         this.ingredientID = ingredientID;
         this.quantity = quantity;
         this.unitID = unitID;
     }
 
-    public RecipeIngredient(int recipeID, long ingredientID, int quantity, Integer unitID, String ingredientName) {
+    public RecipeIngredient(int recipeID, long ingredientID, BigDecimal quantity, Integer unitID, String ingredientName) {
         this.recipeID = recipeID;
         this.ingredientID = ingredientID;
         this.quantity = quantity;
@@ -32,7 +32,7 @@ public class RecipeIngredient {
         this.ingredientName = ingredientName;
     }
 
-    public RecipeIngredient(int recipeID, long ingredientID, int quantity, Integer unitID, String ingredientName, String unitName) {
+    public RecipeIngredient(int recipeID, long ingredientID, BigDecimal quantity, Integer unitID, String ingredientName, String unitName) {
         this.recipeID = recipeID;
         this.ingredientID = ingredientID;
         this.quantity = quantity;
@@ -45,7 +45,9 @@ public class RecipeIngredient {
         try {
             this.recipeID = rs.getInt("recipeID");
             this.ingredientID = rs.getLong("ingredientID");
-            this.quantity = rs.getInt("quantity");
+            // Changed from getInt to getBigDecimal to support fractional values
+            this.quantity = rs.getBigDecimal("quantity");
+            
             // Handle null case for unitID
             Object unitIDObj = rs.getObject("unitID");
             this.unitID = unitIDObj != null ? rs.getInt("unitID") : null;
@@ -77,7 +79,7 @@ public class RecipeIngredient {
         return ingredientID;
     }
 
-    public int getQuantity() {
+    public BigDecimal getQuantity() {
         return quantity;
     }
 

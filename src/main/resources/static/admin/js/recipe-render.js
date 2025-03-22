@@ -1,5 +1,50 @@
 // Recipe rendering and display
 const RecipeRenderUI = {
+    // Helper function to convert decimal to fraction
+    decimalToFraction(decimal) {
+        if (decimal % 1 === 0) return Math.floor(decimal); // Return whole numbers as is
+        
+        // Common fractions we want to display nicely
+        const commonFractions = {
+            0.25: '1/4',
+            0.5: '1/2',
+            0.75: '3/4',
+            0.333: '1/3',
+            0.667: '2/3',
+            0.2: '1/5',
+            0.4: '2/5',
+            0.6: '3/5',
+            0.8: '4/5',
+            0.125: '1/8',
+            0.375: '3/8',
+            0.625: '5/8',
+            0.875: '7/8'
+        };
+
+        // Check if it's a common fraction
+        for (let [dec, frac] of Object.entries(commonFractions)) {
+            if (Math.abs(decimal - parseFloat(dec)) < 0.01) {
+                return frac;
+            }
+        }
+
+        // For mixed numbers (e.g., 1 3/4)
+        const whole = Math.floor(decimal);
+        const fractional = decimal - whole;
+        
+        if (whole > 0) {
+            // Find closest fraction for the fractional part
+            for (let [dec, frac] of Object.entries(commonFractions)) {
+                if (Math.abs(fractional - parseFloat(dec)) < 0.01) {
+                    return `${whole} ${frac}`;
+                }
+            }
+        }
+
+        // If no nice fraction found, return decimal with up to 2 decimal places
+        return parseFloat(decimal.toFixed(2));
+    },
+
     // Recipe preview rendering
     renderRecipePreview() {
         const previewContainer = document.getElementById("recipePreview");
@@ -42,9 +87,13 @@ const RecipeRenderUI = {
         ingredientList.forEach(ing => {
             let ingredientObj = RecipeData.data.ingredients?.find(i => i.ingredientID === ing.ingredientID);
             let ingredientDisplayName = ingredientObj ? ingredientObj.ingredientName : "Unknown Ingredient";
+            
+            // Format the quantity using our new fraction display
+            const formattedQuantity = this.decimalToFraction(ing.quantity);
+            
             html += `
                 <div class="ingredient-item">
-                    <strong>${ing.quantity} ${ing.unitName || ''}</strong> of ${ingredientDisplayName}
+                    <strong>${formattedQuantity} ${ing.unitName || ''}</strong> of ${ingredientDisplayName}
                 </div>`;
         });
         html += '</div></div>';
