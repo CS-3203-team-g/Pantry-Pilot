@@ -6,18 +6,18 @@ import java.sql.Timestamp;
 import java.util.UUID;
 
 public class UserHealthInfo {
-    private String userHealthInfoID;
-    private String userID;
+    private final String userHealthInfoID;
+    private final String userID;
     private String gender;
     private String dietaryPreference;
+    private String activityLevel;
     private double weight;
     private double height;
     private double goalWeight;
-    private int dailyCalorieGoal;
     private int age;
     private Timestamp updatedAt;
 
-    public UserHealthInfo(String userID, double weight, double goalWeight, double height, int age, String gender, int dailyCalorieGoal, String dietaryPreferences) {
+    public UserHealthInfo(String userID, double weight, double goalWeight, double height, int age, String gender, String dietaryPreferences, String activityLevel) {
         this.userHealthInfoID = UUID.randomUUID().toString(); // Auto-generate unique ID
         this.userID = userID;
         this.weight = weight;
@@ -25,13 +25,13 @@ public class UserHealthInfo {
         this.height = height;
         this.age = age;
         this.gender = gender;
-        this.dailyCalorieGoal = dailyCalorieGoal;
         this.dietaryPreference = dietaryPreferences;
+        this.activityLevel = activityLevel;
         this.updatedAt = new Timestamp(System.currentTimeMillis()); // Set update timestam
     }
 
     // Constructor for loading existing user health info from database
-    public UserHealthInfo(String healthInfoID, String userID, double weight, double goalWeight, double height, int age, String gender, int dailyCalorieGoal, String dietaryPreferences, Timestamp updatedAt) {
+    public UserHealthInfo(String healthInfoID, String userID, double weight, double goalWeight, double height, int age, String gender, String dietaryPreferences, String activityLevel, Timestamp updatedAt) {
         this.userHealthInfoID = healthInfoID;
         this.userID = userID;
         this.weight = weight;
@@ -39,8 +39,8 @@ public class UserHealthInfo {
         this.height = height;
         this.age = age;
         this.gender = gender;
-        this.dailyCalorieGoal = dailyCalorieGoal;
         this.dietaryPreference = dietaryPreferences;
+        this.activityLevel = activityLevel;
         this.updatedAt = updatedAt;
     }
 
@@ -54,8 +54,8 @@ public class UserHealthInfo {
             this.height = resultSet.getDouble("height");
             this.age = resultSet.getInt("age");
             this.gender = resultSet.getString("gender");
-            this.dailyCalorieGoal = resultSet.getInt("dailyCalorieGoal");
             this.dietaryPreference = resultSet.getString("dietaryPreferences");
+            this.activityLevel = resultSet.getString("activityLevel");
             this.updatedAt = resultSet.getTimestamp("updatedAt");
         } catch (SQLException e) {
             e.printStackTrace();
@@ -116,21 +116,21 @@ public class UserHealthInfo {
         updateTimestamp();
     }
 
-    public int getDailyCalorieGoal() {
-        return dailyCalorieGoal;
-    }
-
-    public void setDailyCalorieGoal(int dailyCalorieGoal) {
-        this.dailyCalorieGoal = dailyCalorieGoal;
-        updateTimestamp();
-    }
-
     public String getDietaryPreferences() {
         return dietaryPreference;
     }
 
     public void setDietaryPreferences(String dietaryPreferences) {
         this.dietaryPreference = dietaryPreferences;
+        updateTimestamp();
+    }
+
+    public String getActivityLevel() {
+        return activityLevel;
+    }
+
+    public void setActivityLevel(String activityLevel) {
+        this.activityLevel = activityLevel;
         updateTimestamp();
     }
 
@@ -150,8 +150,8 @@ public class UserHealthInfo {
                 ", height=" + height +
                 ", age=" + age +
                 ", gender='" + gender + '\'' +
-                ", dailyCalorieGoal=" + dailyCalorieGoal +
                 ", dietaryPreferences='" + dietaryPreference + '\'' +
+                ", activityLevel='" + activityLevel + '\'' +
                 ", updatedAt=" + updatedAt +
                 '}';
     }

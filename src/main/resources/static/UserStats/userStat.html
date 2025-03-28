@@ -99,7 +99,7 @@
 
                 <div class="mb-3">
                     <label for="height" class="form-label">Height</label>
-                    <input type="email" class="form-control" id="height" name="height" required>
+                    <input type="number" class="form-control" id="height" name="height" required>
                 </div>
 
                 <div class="mb-3">
@@ -148,14 +148,33 @@
     userStatsForm.addEventListener("submit", async function() {
         const currWeight = document.getElementById("currentWeight").value;
         const goalWeight = document.getElementById("goalWeight").value;
-        const age = document.getElementById("age")
+        const age = document.getElementById("age");
+        const height = document.getElementById("height");
         const activityLevel = document.getElementById("activityLevel");
 
-        const payload = { currWeight, goalWeight, age, activityLevel };
+        const payload = { currWeight, goalWeight, age, height, activityLevel };
 
         try{
+            const response = await fetch('/api/updateHealthStats', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            if (!response.ok) {
+                // Extract error message from the response if available
+                const errorData = await response.json();
+                alert(`Error: ${errorData.message || 'Unable to update recipe'}`);
+            } else {
+                const result = await response.json();
+                alert("Info updated successfully!");
+                // Redirect the user to the login page or another page
+                window.location.href = "/";
+            }
         } catch (e) {
-
+            console.error("Error during updating-stats:", error);
+            alert("An unexpected error occurred. Please try again later.");
         }
 
     })
