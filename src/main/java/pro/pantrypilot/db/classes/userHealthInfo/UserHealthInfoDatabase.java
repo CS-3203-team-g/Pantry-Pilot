@@ -7,7 +7,7 @@ import pro.pantrypilot.db.DatabaseConnectionManager;
 import java.sql.SQLException;
 
 public class UserHealthInfoDatabase {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserHealthInfoDatabase.class)
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserHealthInfoDatabase.class);
 
     public static void initializeUserHealthInfoDatabase() {
         String createUserHealthInfoTableSQL =
@@ -21,7 +21,7 @@ public class UserHealthInfoDatabase {
                 "    dailyCalorieGoal INT NOT NULL,\n" +
                 "    dietaryPreferences VARCHAR(255),\n" +
                 "    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n" +
-                "    FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE\n" +
+                "    FOREIGN KEY (userID) REFERENCES users(userID) ON DELETE CASCADE\n" +
                 ");\n";
         try{
             DatabaseConnectionManager.getConnection().createStatement().executeUpdate(createUserHealthInfoTableSQL);
@@ -31,7 +31,7 @@ public class UserHealthInfoDatabase {
         }
     }
     public static boolean createUserHealthInfo(UserHealthInfo userHealthInfo) {
-        String createUserHealthInfoSQL = "INSERT INTO user_health_info (userID, weight, height"
+        String createUserHealthInfoSQL = "INSERT INTO user_health_info (userID, weight, height";
         return false;
     }
 }

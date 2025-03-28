@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.pantrypilot.db.DatabaseConnectionManager;
+import pro.pantrypilot.endpoints.api.userStats.UpdateHealthStats;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -58,6 +59,7 @@ public class Main {
         server.createContext("/api/addIngredientToShoppingList", new pro.pantrypilot.endpoints.api.shoppingLists.AddIngredientToShoppingList());
         server.createContext("/api/addRecipeIngredientsToShoppingList", new pro.pantrypilot.endpoints.api.shoppingLists.AddRecipeIngredientsToShoppingList());
         server.createContext("/api/removeIngredientFromShoppingList", new pro.pantrypilot.endpoints.api.shoppingLists.RemoveIngredientFromShoppingList());
+        server.createContext("/api/updateHealthStats", new pro.pantrypilot.endpoints.api.userStats.UpdateHealthStats());
 
 //      Admin pages
         server.createContext("/admin", new pro.pantrypilot.endpoints.pages.admin.Admin());
