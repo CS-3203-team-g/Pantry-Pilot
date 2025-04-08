@@ -88,6 +88,11 @@
                         <option>kg</option>
                     </select>
                 </div>
+                <div class="mb-3">
+                    <label for="userId" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="userId" name="userId">
+                </div>
+
 
                 <div class="mb-3">
                     <label for="goalWeight" class="form-label">Goal Weight</label>
@@ -105,6 +110,11 @@
                 <div class="mb-3">
                     <label for="age" class="form-label">Age</label>
                     <input type="number" class="form-control" id="age" name="age" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="dietaryPreferences" class="form-label">Dietary Preference</label>
+                    <input type="text" class="form-control" id="dietaryPreferences" name = "dietaryPreference">
                 </div>
 
                 <div class="mb-3">
@@ -151,8 +161,9 @@
         const age = document.getElementById("age");
         const height = document.getElementById("height");
         const activityLevel = document.getElementById("activityLevel");
+        const dietaryPreferences = document.getElementById("dietaryPreferences");
 
-        const payload = { currWeight, goalWeight, age, height, activityLevel };
+        const payload = { currWeight, goalWeight, age, height, dietaryPreferences, activityLevel };
 
         try{
             const response = await fetch('/api/updateHealthStats', {

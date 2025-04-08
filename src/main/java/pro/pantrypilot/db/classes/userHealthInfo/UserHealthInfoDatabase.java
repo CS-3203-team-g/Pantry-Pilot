@@ -31,8 +31,24 @@ public class UserHealthInfoDatabase {
         }
     }
     public static boolean createUserHealthInfo(UserHealthInfo userHealthInfo) {
-        String createUserHealthInfoSQL = "INSERT INTO user_health_info (userID, weight, height";
-        return false;
+        String createUserHealthInfoSQL = "INSERT INTO user_health_info (userID, weight, height, age, activityLevel, gender, dietaryPreferences, updatedAt) VALUES ('"
+                + userHealthInfo.getUserID() + "', '"
+                + userHealthInfo.getWeight() + "', '"
+                + userHealthInfo.getHeight() + "', '"
+                + userHealthInfo.getAge() + "', '"
+                + userHealthInfo.getActivityLevel() + "', '"
+                + userHealthInfo.getGender() + "', '"
+                + userHealthInfo.getDietaryPreferences() + "', '"
+                + userHealthInfo.getUpdatedAt() + "');";
+        try {
+            int rowsAffected = DatabaseConnectionManager.getConnection()
+                    .createStatement()
+                    .executeUpdate(createUserHealthInfoSQL);
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            LOGGER.error("Error creating user health info", e);
+            return false;
+        }
     }
 }
 
