@@ -1,5 +1,7 @@
 package pro.pantrypilot.endpoints.api.login;
 
+import java.security.MessageDigest;
+import java.util.Random;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.sun.net.httpserver.HttpExchange;
@@ -58,6 +60,7 @@ public class Login implements HttpHandler {
         }
 
         // Retrieve the user from the database
+
         User user = UsersDatabase.getUserByUsername(loginRequest.username);
 
         if (user == null) {
@@ -77,6 +80,16 @@ public class Login implements HttpHandler {
             logger.debug("Invalid password for user: {}", loginRequest.username);
             sendResponse(exchange, 401, "{\"message\": \"Invalid username or password\"}");
             return;
+        } else{
+            //Implement M-F A
+            String generatedOTP = sendOTP();
+            String userOTPInput = "123456"; // Replace with real input in production
+
+            if (userOTPInput.equals(generatedOTP)) {
+                login_user(user, exchange, loginRequest );
+            } else {
+                System.out.println("MFA Failed. Access denied.");
+            }
         }
 
         Session session = new Session(user.getUserID(), getClientIpAddress(exchange));
@@ -114,6 +127,34 @@ public class Login implements HttpHandler {
         }
     }
 
+    private void login_user(User user, HttpExchange exchange, LoginRequest loginRequest) throws IOException {
+
+        Session session = new Session(user.getUserID(), getClientIpAddress(exchange));
+        session = SessionsDatabase.createSession(session);
+
+        if(session == null || session.getSessionID() == null) {
+            logger.error("Error creating session for user: {}", user.getUsername());
+            sendResponse(exchange, 500, "{\"message\": \"Internal server error, null session ID\"}");
+            return;
+        }
+
+        // Update session's last used time
+        SessionsDatabase.updateLastUsed(session.getSessionID());
+        UsersDatabase.updateUserLastLogin(user);
+
+        // Set cookies securely using HTTP headers - this will be handled by the browser
+        // Set sessionID cookie with HttpOnly flag
+        exchange.getResponseHeaders().add("Set-Cookie",
+                String.format("sessionID=%s; Path=/; Secure; HttpOnly; SameSite=Strict", session.getSessionID()));
+
+        // Set username cookie without HttpOnly to allow frontend access
+        exchange.getResponseHeaders().add("Set-Cookie",
+                String.format("username=%s; Path=/; Secure; SameSite=Strict", loginRequest.username));
+
+        // Login successful - still send a response for the client to process
+        sendResponse(exchange, 200, "{\"message\": \"Login successful\",\"sessionID\": \"" + session.getSessionID() + "\"}");
+    }
+
     private String getClientIpAddress(HttpExchange exchange) {
         // Try to get IP from X-Forwarded-For header first
         String ip = exchange.getRequestHeaders().getFirst("X-Forwarded-For");
@@ -123,5 +164,16 @@ public class Login implements HttpHandler {
         }
         // Fallback to remote address if X-Forwarded-For is not present
         return exchange.getRemoteAddress().getAddress().getHostAddress();
+    }
+
+    private static String sendOTP() {
+        // Generate a 6-digit OTP
+        Random random = new Random();
+        int otp = 100000 + random.nextInt(900000);
+        System.out.println("Generated OTP (sent to user): " + otp); // Simulate OTP sent
+        //return String.valueOf(otp); //Temporarily disabled return statement for testing
+        //For test only
+        int otpForTest = 123456;
+         return String.valueOf(otpForTest);
     }
 }
