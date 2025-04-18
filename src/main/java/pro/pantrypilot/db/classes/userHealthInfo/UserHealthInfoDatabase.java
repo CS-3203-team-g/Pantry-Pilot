@@ -5,18 +5,20 @@ import org.slf4j.LoggerFactory;
 import pro.pantrypilot.db.DatabaseConnectionManager;
 
 import java.sql.SQLException;
+import java.util.UUID;
 
 public class UserHealthInfoDatabase {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserHealthInfoDatabase.class);
 
     public static void initializeUserHealthInfoDatabase() {
         String createUserHealthInfoTableSQL =
-                "CREATE TABLE user_health_info (\n" +
+                "CREATE TABLE IF NOT EXISTS user_health_info (\n" +
                 "    healthInfoID VARCHAR(36) PRIMARY KEY,\n" +
-                "    userID VARCHAR(36) NOT NULL,\n" +
+                "    userID CHAR(36) NOT NULL,\n" +
                 "    weight DOUBLE NOT NULL,\n" +
                 "    height DOUBLE NOT NULL,\n" +
                 "    age INT NOT NULL,\n" +
+                "    activityLevel VARCHAR(30) NOT NULL,\n" +
                 "    gender VARCHAR(20) NOT NULL,\n" +
                 "    dailyCalorieGoal INT NOT NULL,\n" +
                 "    dietaryPreferences VARCHAR(255),\n" +
@@ -31,7 +33,9 @@ public class UserHealthInfoDatabase {
         }
     }
     public static boolean createUserHealthInfo(UserHealthInfo userHealthInfo) {
+
         String createUserHealthInfoSQL = "INSERT INTO user_health_info (userID, weight, height, age, activityLevel, gender, dietaryPreferences, updatedAt) VALUES ('"
+                + userHealthInfo.getHealthInfoID() + "', '"
                 + userHealthInfo.getUserID() + "', '"
                 + userHealthInfo.getWeight() + "', '"
                 + userHealthInfo.getHeight() + "', '"

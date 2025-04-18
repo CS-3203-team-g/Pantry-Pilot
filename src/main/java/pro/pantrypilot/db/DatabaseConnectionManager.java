@@ -72,7 +72,7 @@ public class DatabaseConnectionManager {
         RecipeIngredientsDatabase.initializeRecipeIngredientsDatabase();
         ShoppingListsDatabase.initializeShoppingListsDatabase();
         ShoppingListIngredientsDatabase.initializeShoppingListIngredientsDatabase();
-        UserHealthInfoDatabase.initializeUserHealthInfoDatabase();
+        UserHealthInfoDatabase.initializeUserHealthInfoDatabase(); //might need to move this to the front
 
     }
 }

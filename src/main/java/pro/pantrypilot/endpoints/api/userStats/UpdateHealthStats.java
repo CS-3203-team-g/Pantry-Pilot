@@ -36,6 +36,8 @@ public class UpdateHealthStats implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        System.out.println("Request received at /api/updateHealthStats with method: " + exchange.getRequestMethod());
+
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
             logger.debug("Invalid request method: {}", exchange.getRequestMethod());
             exchange.sendResponseHeaders(405, -1); // Method Not Allowed

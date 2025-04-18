@@ -88,11 +88,6 @@
                         <option>kg</option>
                     </select>
                 </div>
-                <div class="mb-3">
-                    <label for="userId" class="form-label">Username</label>
-                    <input type="text" class="form-control" id="userId" name="userId">
-                </div>
-
 
                 <div class="mb-3">
                     <label for="goalWeight" class="form-label">Goal Weight</label>
@@ -147,7 +142,17 @@
     const selectedUnit = document.getElementsByClassName("unit-display")
     const userStatsForm = document.getElementById("userStatsForm")
 
-    console.log(weightUnit.value)
+    function getCookie(name) {
+        const nameEQ = name + "=";
+        const ca = document.cookie.split(";");
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === " ") c = c.substring(1);
+            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+
     weightUnit.addEventListener("change", function() {
         console.log(this.value);
         for(let span of selectedUnit){
@@ -155,40 +160,54 @@
         }
     })
 
-    userStatsForm.addEventListener("submit", async function() {
-        const currWeight = document.getElementById("currentWeight").value;
-        const goalWeight = document.getElementById("goalWeight").value;
-        const age = document.getElementById("age");
-        const height = document.getElementById("height");
-        const activityLevel = document.getElementById("activityLevel");
-        const dietaryPreferences = document.getElementById("dietaryPreferences");
+    userStatsForm.addEventListener("submit",
+        async function (e) {
+            console.log("inside submit event")
 
-        const payload = { currWeight, goalWeight, age, height, dietaryPreferences, activityLevel };
+            e.preventDefault()
 
-        try{
-            const response = await fetch('/api/updateHealthStats', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            if (!response.ok) {
-                // Extract error message from the response if available
-                const errorData = await response.json();
-                alert(`Error: ${errorData.message || 'Unable to update recipe'}`);
-            } else {
-                const result = await response.json();
-                alert("Info updated successfully!");
-                // Redirect the user to the login page or another page
-                window.location.href = "/";
+            console.log("past e.preventDefault()")
+
+            const currWeight = document.getElementById("currentWeight").value;
+            const goalWeight = document.getElementById("goalWeight").value;
+            const age = document.getElementById("age").value;
+            const height = document.getElementById("height").value;
+            const activityLevel = document.getElementById("activityLevel").value;
+            const dietaryPreferences = document.getElementById("dietaryPreferences").value;
+
+            const sessionID = getCookie('sessionID')
+
+            console.log("Gathered data, here's dietaryPreferences:" + dietaryPreferences);
+            //NEED TO SUBMIT A SESSION ID IN THE PAYLOAD
+            const payload = {sessionID, currWeight, goalWeight, age, height, dietaryPreferences, activityLevel};
+
+            console.log("initialize payload")
+
+            try {
+                const response = await fetch('/api/updateHealthStats', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                console.log("response initialized")
+                if (!response.ok) {
+                    // Extract error message from the response if available
+                    const errorData = await response.json();
+                    alert(`Error: ${errorData.message || 'Unable to update recipe'}`);
+                } else {
+                    const result = await response.json();
+                    alert("Info updated successfully!");
+                    // Redirect the user to the login page or another page
+                    window.location.href = "/";
+                }
+            } catch (e) {
+                console.error("Error during updating-stats:", error);
+                alert("An unexpected error occurred. Please try again later.");
             }
-        } catch (e) {
-            console.error("Error during updating-stats:", error);
-            alert("An unexpected error occurred. Please try again later.");
-        }
 
-    })
+        })
 </script>
 </body>
 </html>
