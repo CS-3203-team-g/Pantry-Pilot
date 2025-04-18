@@ -44,6 +44,7 @@ public class Main {
         logger.info("Creating API Contexts");
         server.createContext("/api/createUser", new pro.pantrypilot.endpoints.api.signup.CreateUser());
         server.createContext("/api/login", new pro.pantrypilot.endpoints.api.login.Login());
+        server.createContext("/api/login/verify-mfa", new pro.pantrypilot.endpoints.api.login.VerifyMfa());
         server.createContext("/api/changePassword", new pro.pantrypilot.endpoints.api.settings.ChangePassword());
         server.createContext("/api/getRecipesWithoutIngredients", new pro.pantrypilot.endpoints.api.recipes.GetRecipesWithoutIngredients());
         server.createContext("/api/getRecipesWithIngredients", new pro.pantrypilot.endpoints.api.recipes.GetRecipesWithIngredients());

@@ -16,6 +16,8 @@ public class User {
     private Timestamp createdAt;
     private Timestamp lastLogin;
     private boolean isActive;
+    private String mfaSecret;
+    private boolean mfaEnabled;
 
     // Constructor for new users (auto-generates userID)
     public User(String username, String email, String plaintextPassword) {
@@ -30,6 +32,8 @@ public class User {
         this.isActive = true; // Default value
         this.createdAt = new Timestamp(System.currentTimeMillis()); // Set current timestamp
         this.lastLogin = null; // Not logged in yet
+        this.mfaEnabled = false; // MFA disabled by default
+        this.mfaSecret = null; // No secret initially
     }
 
     // Constructor for loading existing users from the database
@@ -54,6 +58,8 @@ public class User {
             this.createdAt = resultSet.getTimestamp("createdAt");
             this.lastLogin = resultSet.getTimestamp("lastLogin");
             this.isActive = resultSet.getBoolean("isActive");
+            this.mfaSecret = resultSet.getString("mfaSecret");
+            this.mfaEnabled = resultSet.getBoolean("mfaEnabled");
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException("Error constructing User from ResultSet", e);
@@ -118,6 +124,23 @@ public class User {
         isActive = active;
     }
 
+    // Getters and Setters for MFA fields
+    public String getMfaSecret() {
+        return mfaSecret;
+    }
+
+    public void setMfaSecret(String mfaSecret) {
+        this.mfaSecret = mfaSecret;
+    }
+
+    public boolean isMfaEnabled() {
+        return mfaEnabled;
+    }
+
+    public void setMfaEnabled(boolean mfaEnabled) {
+        this.mfaEnabled = mfaEnabled;
+    }
+
     // Method to update last login timestamp
     public void updateLastLogin() {
         this.lastLogin = new Timestamp(System.currentTimeMillis());
@@ -132,6 +155,7 @@ public class User {
                 ", createdAt=" + createdAt +
                 ", lastLogin=" + lastLogin +
                 ", isActive=" + isActive +
+                ", mfaEnabled=" + mfaEnabled +
                 '}';
     }
 

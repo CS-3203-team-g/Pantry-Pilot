@@ -23,7 +23,9 @@ public class UsersDatabase {
                 + "    salt VARCHAR(255) NOT NULL UNIQUE,\n"                    // Salt for password hashing
                 + "    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n" // Auto timestamp
                 + "    lastLogin TIMESTAMP NULL DEFAULT NULL,\n"         // Nullable, updated on login
-                + "    isActive BOOLEAN DEFAULT TRUE\n"                  // Active status flag
+                + "    isActive BOOLEAN DEFAULT TRUE,\n"                  // Active status flag
+                + "    mfaSecret VARCHAR(255) NULL DEFAULT NULL,\n"     // Added for MFA
+                + "    mfaEnabled BOOLEAN DEFAULT FALSE\n"         // Added for MFA
                 + ");";
         try {
             DatabaseConnectionManager.getConnection().createStatement().execute(createUsersTableSQL);
@@ -35,35 +37,55 @@ public class UsersDatabase {
     }
 
     public static boolean createUser(User user) {
-        String createUserSQL = "INSERT INTO users (username, email, passwordHash, salt) VALUES ('"
-                + user.getUsername() + "', '"
-                + user.getEmail() + "', '"
-                + user.getPasswordHash() + "', '"
-                + user.getSalt() + "');";
-        try {
-            int rowsAffected = DatabaseConnectionManager.getConnection()
-                    .createStatement()
-                    .executeUpdate(createUserSQL);
+        String createUserSQL = "INSERT INTO users (username, email, passwordHash, salt) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement preparedStatement = DatabaseConnectionManager.getConnection().prepareStatement(createUserSQL)) {
+            preparedStatement.setString(1, user.getUsername());
+            preparedStatement.setString(2, user.getEmail());
+            preparedStatement.setString(3, user.getPasswordHash());
+            preparedStatement.setString(4, user.getSalt());
+            // mfaSecret defaults to NULL and mfaEnabled defaults to FALSE in the DB schema
+
+            int rowsAffected = preparedStatement.executeUpdate();
             return rowsAffected > 0; // Returns true if a row was inserted
         } catch (SQLException e) {
-            logger.error("Error creating user", e);
+            logger.error("Error creating user: " + user.getUsername(), e);
             return false; // Returns false if an exception occurred
         }
     }
 
 
     public static User getUser(String username) {
-        String getUserSQL = "SELECT * FROM users WHERE username = '" + username + "';";
-        try (Statement statement = DatabaseConnectionManager.getConnection().createStatement();
-             ResultSet resultSet = statement.executeQuery(getUserSQL)) {
+        String getUserSQL = "SELECT * FROM users WHERE username = ?"; // Use PreparedStatement
+        try (PreparedStatement preparedStatement = DatabaseConnectionManager.getConnection().prepareStatement(getUserSQL)) {
+            preparedStatement.setString(1, username);
 
-            if (resultSet.next()) {  // Move cursor to the first row
-                return new User(resultSet);
-            } else {
-                return null; // No user found with the given username
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {  // Move cursor to the first row
+                    return new User(resultSet); // Constructor now handles all fields including MFA
+                } else {
+                    return null; // No user found with the given username
+                }
             }
         } catch (SQLException e) {
-            logger.error("Error retrieving user", e);
+            logger.error("Error retrieving user: " + username, e);
+            return null;
+        }
+    }
+
+    public static User getUserById(String userId) {
+        String getUserSQL = "SELECT * FROM users WHERE userID = ?";
+        try (PreparedStatement preparedStatement = DatabaseConnectionManager.getConnection().prepareStatement(getUserSQL)) {
+            preparedStatement.setString(1, userId);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return new User(resultSet); // Assumes User constructor handles ResultSet
+                } else {
+                    return null; // No user found with the given userID
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error retrieving user by ID: " + userId, e);
             return null;
         }
     }

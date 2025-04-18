@@ -56,33 +56,54 @@
                     <div class="card-body">
                         <h3 class="card-title text-center mb-4">Login to Pantry Pilot</h3>
                         <form id="loginForm">
-                            <div class="mb-3">
-                                <label for="username" class="form-label">Username</label>
-                                <input
-                                        type="text"
-                                        class="form-control"
-                                        id="username"
-                                        name="username"
-                                        placeholder="Enter username"
-                                        required
-                                />
+                            <div id="credentialsSection">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input
+                                            type="text"
+                                            class="form-control"
+                                            id="username"
+                                            name="username"
+                                            placeholder="Enter username"
+                                            required
+                                    />
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password</label>
+                                    <input
+                                            type="password"
+                                            class="form-control"
+                                            id="password"
+                                            name="password"
+                                            placeholder="Enter password"
+                                            required
+                                    />
+                                </div>
+                                <div class="d-grid mb-3">
+                                    <button type="submit" id="loginBtn" class="btn btn-primary">Login</button>
+                                </div>
+                                <div class="text-center">
+                                    <a href="#" class="text-primary">Forgot Password?</a>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="password" class="form-label">Password</label>
-                                <input
-                                        type="password"
-                                        class="form-control"
-                                        id="password"
-                                        name="password"
-                                        placeholder="Enter password"
-                                        required
-                                />
-                            </div>
-                            <div class="d-grid mb-3">
-                                <button type="submit" class="btn btn-primary">Login</button>
-                            </div>
-                            <div class="text-center">
-                                <a href="#" class="text-primary">Forgot Password?</a>
+                            <!-- MFA Section (Initially Hidden) -->
+                            <div id="mfaSection" style="display: none;">
+                                <p class="text-center text-dark">Enter the code from your authenticator app.</p>
+                                <div class="mb-3">
+                                    <label for="otpCode" class="form-label">One-Time Password</label>
+                                    <input
+                                            type="text"
+                                            class="form-control"
+                                            id="otpCode"
+                                            name="otpCode"
+                                            placeholder="Enter 6-digit code"
+                                            required
+                                            inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code"
+                                    />
+                                </div>
+                                <div class="d-grid mb-3">
+                                    <button type="button" id="verifyMfaBtn" class="btn btn-primary">Verify Code</button>
+                                </div>
                             </div>
                         </form>
                     </div>
@@ -108,15 +129,26 @@
 
 <!-- JavaScript for handling login -->
 <script>
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    const loginForm = document.getElementById('loginForm');
+    const credentialsSection = document.getElementById('credentialsSection');
+    const mfaSection = document.getElementById('mfaSection');
+    const verifyMfaBtn = document.getElementById('verifyMfaBtn');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const otpInput = document.getElementById('otpCode');
+
+    let mfaUserId = null; // Variable to store user ID for MFA verification
+    let currentUsername = null; // Store username for setting cookie after MFA
+
+    loginForm.addEventListener('submit', async function(e) {
         e.preventDefault(); // Prevent default form submission
 
         // Retrieve form values
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value;
+        currentUsername = usernameInput.value.trim();
+        const password = passwordInput.value;
 
         // Prepare the payload
-        const payload = { username, password };
+        const payload = { username: currentUsername, password };
 
         try {
             // Send the login request to the backend API
@@ -128,27 +160,79 @@
                 body: JSON.stringify(payload)
             });
 
-            // Check if the login was successful
-            if (!response.ok) {
+            // Check response status
+            if (response.status === 202) {
+                // MFA Required
+                const result = await response.json();
+                if (result.mfaRequired && result.userId) {
+                    mfaUserId = result.userId;
+                    // Hide credentials, show MFA input
+                    credentialsSection.style.display = 'none';
+                    mfaSection.style.display = 'block';
+                    otpInput.focus(); // Focus on the OTP input
+                } else {
+                    alert("Error: MFA required but user ID not returned.");
+                }
+            } else if (response.ok) {
+                // Login successful (No MFA or already verified)
+                const result = await response.json();
+                handleLoginSuccess(result.sessionID, currentUsername);
+            } else {
+                // Other errors (e.g., 401 Unauthorized, 400 Bad Request)
                 const errorData = await response.json();
                 alert(`Error: ${errorData.message || 'Unable to login.'}`);
-            } else {
-                const result = await response.json();
-
-                // Save sessionID and username to cookies
-                document.cookie = `sessionID=${result.sessionID}; path=/; secure; SameSite=Strict`;
-                document.cookie = `username=${username}; path=/; secure; SameSite=Strict`;
-
-                // Check for redirect parameter
-                const urlParams = new URLSearchParams(window.location.search);
-                const redirectUrl = urlParams.get('redirect') || '/';
-                window.location.href = redirectUrl;
             }
         } catch (error) {
             console.error("Error during login:", error);
             alert("An unexpected error occurred. Please try again later.");
         }
     });
+
+    // Event listener for the MFA verification button
+    verifyMfaBtn.addEventListener('click', async function() {
+        const otpCode = otpInput.value.trim();
+
+        if (!mfaUserId || !otpCode) {
+            alert("Missing user ID or OTP code.");
+            return;
+        }
+
+        const payload = { userId: mfaUserId, otpCode };
+
+        try {
+            const response = await fetch('/api/login/verify-mfa', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                handleLoginSuccess(result.sessionID, currentUsername);
+            } else {
+                const errorData = await response.json();
+                alert(`Error: ${errorData.message || 'Invalid OTP code.'}`);
+                otpInput.value = ''; // Clear OTP field on error
+                otpInput.focus();
+            }
+        } catch (error) {
+            console.error("Error during MFA verification:", error);
+            alert("An unexpected error occurred during MFA verification.");
+        }
+    });
+
+    // Helper function for successful login (sets cookies and redirects)
+    function handleLoginSuccess(sessionID, username) {
+        document.cookie = `sessionID=${sessionID}; path=/; secure; SameSite=Strict`;
+        document.cookie = `username=${username}; path=/; secure; SameSite=Strict`;
+
+        // Check for redirect parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectUrl = urlParams.get('redirect') || '/';
+        window.location.href = redirectUrl;
+    }
 </script>
 </body>
 </html>

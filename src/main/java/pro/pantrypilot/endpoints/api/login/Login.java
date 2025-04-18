@@ -77,6 +77,20 @@ public class Login implements HttpHandler {
             return;
         }
 
+        // MFA Check
+        if (user.isMfaEnabled()) {
+            logger.debug("MFA required for user: {}", user.getUsername());
+            // Indicate MFA is required. Send user ID to use in the next step (verify-mfa).
+            // Consider using a temporary, short-lived token instead of userID for enhanced security.
+            String mfaRequiredResponse = String.format(
+                "{\"mfaRequired\": true, \"userId\": \"%s\"}",
+                user.getUserID()
+            );
+            sendResponse(exchange, 202, mfaRequiredResponse); // 202 Accepted: Further action needed
+            return;
+        }
+
+        // Login successful
         Session session = new Session(user.getUserID(), exchange.getRemoteAddress().getAddress().getHostAddress());
         session = SessionsDatabase.createSession(session);
 
