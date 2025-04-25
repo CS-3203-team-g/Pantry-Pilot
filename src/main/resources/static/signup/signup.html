@@ -87,7 +87,24 @@
                                         name="password"
                                         placeholder="Enter password"
                                         required
+                                        oninput="checkPasswordStrength(this.value)"
                                 />
+                                <div class="password-strength-meter mt-2">
+                                    <div class="progress" style="height: 5px;">
+                                        <div id="password-strength-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div id="password-strength-text" class="small mt-1"></div>
+                                <div id="password-requirements" class="small text-muted mt-1">
+                                    Password must contain:
+                                    <ul class="mb-0">
+                                        <li id="req-length">At least 8 characters</li>
+                                        <li id="req-uppercase">At least one uppercase letter</li>
+                                        <li id="req-lowercase">At least one lowercase letter</li>
+                                        <li id="req-number">At least one number</li>
+                                        <li id="req-special">At least one special character</li>
+                                    </ul>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label for="confirmPassword" class="form-label">Confirm Password</label>
@@ -127,6 +144,103 @@
 
 <!-- JavaScript for handling user creation -->
 <script>
+    function checkPasswordStrength(password) {
+        const strengthBar = document.getElementById('password-strength-bar');
+        const strengthText = document.getElementById('password-strength-text');
+        const requirements = {
+            length: document.getElementById('req-length'),
+            uppercase: document.getElementById('req-uppercase'),
+            lowercase: document.getElementById('req-lowercase'),
+            number: document.getElementById('req-number'),
+            special: document.getElementById('req-special')
+        };
+
+        // Reset all requirements
+        Object.values(requirements).forEach(req => {
+            req.style.color = '#6c757d';
+            req.style.textDecoration = 'none';
+        });
+
+        let strength = 0;
+        let messages = [];
+
+        // Check length
+        if (password.length >= 8) {
+            strength += 20;
+            requirements.length.style.color = '#198754';
+            requirements.length.style.textDecoration = 'line-through';
+        } else {
+            messages.push('Password should be at least 8 characters long');
+        }
+
+        // Check uppercase
+        if (/[A-Z]/.test(password)) {
+            strength += 20;
+            requirements.uppercase.style.color = '#198754';
+            requirements.uppercase.style.textDecoration = 'line-through';
+        } else {
+            messages.push('Password should contain at least one uppercase letter');
+        }
+
+        // Check lowercase
+        if (/[a-z]/.test(password)) {
+            strength += 20;
+            requirements.lowercase.style.color = '#198754';
+            requirements.lowercase.style.textDecoration = 'line-through';
+        } else {
+            messages.push('Password should contain at least one lowercase letter');
+        }
+
+        // Check numbers
+        if (/[0-9]/.test(password)) {
+            strength += 20;
+            requirements.number.style.color = '#198754';
+            requirements.number.style.textDecoration = 'line-through';
+        } else {
+            messages.push('Password should contain at least one number');
+        }
+
+        // Check special characters
+        if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+            strength += 20;
+            requirements.special.style.color = '#198754';
+            requirements.special.style.textDecoration = 'line-through';
+        } else {
+            messages.push('Password should contain at least one special character');
+        }
+
+        // Update strength bar
+        strengthBar.style.width = strength + '%';
+        
+        // Update strength bar color and text
+        if (strength <= 20) {
+            strengthBar.className = 'progress-bar bg-danger';
+            strengthText.textContent = 'Very Weak';
+            strengthText.className = 'small text-danger';
+        } else if (strength <= 40) {
+            strengthBar.className = 'progress-bar bg-warning';
+            strengthText.textContent = 'Weak';
+            strengthText.className = 'small text-warning';
+        } else if (strength <= 60) {
+            strengthBar.className = 'progress-bar bg-info';
+            strengthText.textContent = 'Medium';
+            strengthText.className = 'small text-info';
+        } else if (strength <= 80) {
+            strengthBar.className = 'progress-bar bg-primary';
+            strengthText.textContent = 'Strong';
+            strengthText.className = 'small text-primary';
+        } else {
+            strengthBar.className = 'progress-bar bg-success';
+            strengthText.textContent = 'Very Strong';
+            strengthText.className = 'small text-success';
+        }
+
+        // Show remaining requirements
+        if (messages.length > 0) {
+            strengthText.textContent += ' - ' + messages.join(', ');
+        }
+    }
+
     document.getElementById('signupForm').addEventListener('submit', async function(e) {
         e.preventDefault(); // Prevent the default form submission
 
@@ -140,6 +254,15 @@
         if (password !== confirmPassword) {
             alert("Passwords do not match.");
             return;
+        }
+
+        // Check password strength
+        const strengthBar = document.getElementById('password-strength-bar');
+        const strength = parseInt(strengthBar.style.width);
+        if (strength < 60) {
+            if (!confirm("Your password is not very strong. Are you sure you want to proceed?")) {
+                return;
+            }
         }
 
         // Create the payload to send to the backend
