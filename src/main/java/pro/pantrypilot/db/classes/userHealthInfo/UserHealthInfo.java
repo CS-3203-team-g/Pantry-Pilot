@@ -11,16 +11,16 @@ public class UserHealthInfo {
     private String gender;
     private String dietaryPreference;
     private String activityLevel;
-    private double weight;
+    private double currWeight;
     private double height;
     private double goalWeight;
     private int age;
     private Timestamp updatedAt;
 
-    public UserHealthInfo(String userID, double weight, double goalWeight, double height, int age, String gender, String dietaryPreferences, String activityLevel) {
+    public UserHealthInfo(String userID, double currWeight, double goalWeight, double height, int age, String gender, String dietaryPreferences, String activityLevel) {
         this.userHealthInfoID = UUID.randomUUID().toString(); // Auto-generate unique ID
         this.userID = userID;
-        this.weight = weight;
+        this.currWeight = currWeight;
         this.goalWeight = goalWeight;
         this.height = height;
         this.age = age;
@@ -31,10 +31,10 @@ public class UserHealthInfo {
     }
 
     // Constructor for loading existing user health info from database
-    public UserHealthInfo(String healthInfoID, String userID, double weight, double goalWeight, double height, int age, String gender, String dietaryPreferences, String activityLevel, Timestamp updatedAt) {
+    public UserHealthInfo(String healthInfoID, String userID, double currWeight, double goalWeight, double height, int age, String gender, String dietaryPreferences, String activityLevel, Timestamp updatedAt) {
         this.userHealthInfoID = healthInfoID;
         this.userID = userID;
-        this.weight = weight;
+        this.currWeight = currWeight;
         this.goalWeight = goalWeight;
         this.height = height;
         this.age = age;
@@ -49,7 +49,7 @@ public class UserHealthInfo {
         try {
             this.userHealthInfoID = resultSet.getString("healthInfoID");
             this.userID = resultSet.getString("userID");
-            this.weight = resultSet.getDouble("weight");
+            this.currWeight = resultSet.getDouble("currWeight");
             this.goalWeight = resultSet.getDouble("goalWeight");
             this.height = resultSet.getDouble("height");
             this.age = resultSet.getInt("age");
@@ -72,16 +72,16 @@ public class UserHealthInfo {
         return userID;
     }
 
-    public double getWeight() {
-        return weight;
+    public double getCurrWeight() {
+        return currWeight;
     }
 
-    public void setWeight(double weight) {
-        this.weight = weight;
+    public void setWeight(double currWeight) {
+        this.currWeight = currWeight;
         updateTimestamp();
     }
 
-    public double getGoalWeight(double goalWeight) {
+    public double getGoalWeight() {
         return goalWeight;
     }
 
@@ -146,7 +146,8 @@ public class UserHealthInfo {
         return "UserHealthInfo{" +
                 "healthInfoID='" + userHealthInfoID + '\'' +
                 ", userID='" + userID + '\'' +
-                ", weight=" + weight +
+                ", currWeight=" + currWeight +
+                ", goalWeight=" + goalWeight +
                 ", height=" + height +
                 ", age=" + age +
                 ", gender='" + gender + '\'' +

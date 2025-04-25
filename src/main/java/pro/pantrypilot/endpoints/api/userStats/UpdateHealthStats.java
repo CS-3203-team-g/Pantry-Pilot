@@ -55,11 +55,24 @@ public class UpdateHealthStats implements HttpHandler {
             return;
         }
 
-        String sessionId = new Gson().fromJson(requestBody, SessionRequest.class).sessionID;
 
-        Session session = SessionsDatabase.getSession(sessionId);
+        String sessionID = null;
+        String cookieHeader = exchange.getRequestHeaders().getFirst("Cookie");
+
+        if (cookieHeader != null) {
+            String[] cookies = cookieHeader.split(";");
+            for (String cookie : cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith("sessionID=")) {
+                    sessionID = cookie.substring("sessionID=".length());
+                    break;
+                }
+            }
+        }
+
+        Session session = SessionsDatabase.getSession(sessionID);
         if(session == null) {
-            logger.debug("No session found for id {}", sessionId);
+            logger.debug("No session found for id {}", sessionID);
             exchange.sendResponseHeaders(404, -1);
             return;
         }
@@ -89,12 +102,21 @@ public class UpdateHealthStats implements HttpHandler {
                 updateHealthStatsRequest.gender, updateHealthStatsRequest.dietaryPreferences, updateHealthStatsRequest.activityLevel);
         boolean success = UserHealthInfoDatabase.createUserHealthInfo(userHealthInfo);
 
+        if(success){
+            sendResponse(exchange, 201, "{\"message\": \"User created successfully\", \"sessionID\": \"" + session.getSessionID() + "\"}");
+        }
         if (!success) {
             logger.debug("Error creating user health info");
         }
     }
 
-    private static class SessionRequest {
-        String sessionID;
+    private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
+        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+        byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
+        exchange.sendResponseHeaders(statusCode, responseBytes.length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(responseBytes);
+        }
     }
+
 }

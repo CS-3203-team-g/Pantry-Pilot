@@ -31,9 +31,9 @@ class UserHealthInfoTest {
         assertDoesNotThrow(() -> UUID.fromString(info.getHealthInfoID()));
 
         assertEquals(userID, info.getUserID());
-        assertEquals(weight, info.getWeight());
+        assertEquals(weight, info.getCurrWeight());
         // Note: the getGoalWeight method takes a parameter and returns it (per the provided code)
-        assertEquals(goalWeight, info.getGoalWeight(goalWeight));
+        assertEquals(goalWeight, info.getGoalWeight());
         assertEquals(height, info.getHeight());
         assertEquals(age, info.getAge());
         assertEquals(gender, info.getGender());
@@ -59,9 +59,9 @@ class UserHealthInfoTest {
 
         assertEquals(healthInfoID, info.getHealthInfoID());
         assertEquals(userID, info.getUserID());
-        assertEquals(weight, info.getWeight());
+        assertEquals(weight, info.getCurrWeight());
         // Since getGoalWeight simply returns the passed parameter, we call it with goalWeight.
-        assertEquals(goalWeight, info.getGoalWeight(goalWeight));
+        assertEquals(goalWeight, info.getGoalWeight());
         assertEquals(height, info.getHeight());
         assertEquals(age, info.getAge());
         assertEquals(gender, info.getGender());
@@ -100,9 +100,9 @@ class UserHealthInfoTest {
 
         assertEquals(healthInfoID, info.getHealthInfoID());
         assertEquals(userID, info.getUserID());
-        assertEquals(weight, info.getWeight());
+        assertEquals(weight, info.getCurrWeight());
         // Call getGoalWeight with goalWeight (as implemented in the provided code)
-        assertEquals(goalWeight, info.getGoalWeight(goalWeight));
+        assertEquals(goalWeight, info.getGoalWeight());
         assertEquals(height, info.getHeight());
         assertEquals(age, info.getAge());
         assertEquals(gender, info.getGender());
@@ -151,7 +151,7 @@ class UserHealthInfoTest {
     @Test
     void testToString() {
         String userID = "user123";
-        double weight = 75.0;
+        double currWeight = 75.0;
         double goalWeight = 70.0;
         double height = 180.0;
         int age = 30;
@@ -159,12 +159,12 @@ class UserHealthInfoTest {
         String dietaryPreference = "Vegetarian";
         String activityLevel = "Active";
 
-        UserHealthInfo info = new UserHealthInfo(userID, weight, goalWeight, height, age, gender, dietaryPreference, activityLevel);
+        UserHealthInfo info = new UserHealthInfo(userID, currWeight, goalWeight, height, age, gender, dietaryPreference, activityLevel);
         String result = info.toString();
 
         assertTrue(result.contains("UserHealthInfo{"));
         assertTrue(result.contains("userID='" + userID + "'"));
-        assertTrue(result.contains("weight=" + weight));
+        assertTrue(result.contains("currWeight=" + currWeight));
         assertTrue(result.contains("height=" + height));
         assertTrue(result.contains("age=" + age));
         assertTrue(result.contains("gender='" + gender + "'"));
