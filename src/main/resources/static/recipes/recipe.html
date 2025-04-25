@@ -123,7 +123,6 @@
                         <div id="empty" class="dropdown-header">No lists found</div>
                     </div>
                 </div>
-
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -152,8 +151,6 @@
         <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
     </div>
 </div>
-
-
 
 <script>
     function showSuccessToast() {
@@ -449,18 +446,6 @@
 
 <!-- Custom Script for Login/Logout Logic -->
 <script>
-    // Helper function to get a cookie's value by name
-    function getCookie(name) {
-        const nameEQ = name + "=";
-        const ca = document.cookie.split(";");
-        for (let i = 0; i < ca.length; i++) {
-            let c = ca[i];
-            while (c.charAt(0) === " ") c = c.substring(1);
-            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-        }
-        return null;
-    }
-
     document.addEventListener("DOMContentLoaded", function () {
         // Check if the user is logged in by looking for the "username" cookie
         const username = getCookie("username");
