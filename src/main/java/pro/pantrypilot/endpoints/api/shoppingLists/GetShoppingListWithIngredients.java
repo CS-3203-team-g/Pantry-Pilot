@@ -5,6 +5,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pro.pantrypilot.db.classes.session.Session;
+import pro.pantrypilot.db.classes.session.SessionsDatabase;
 import pro.pantrypilot.db.classes.shoppingList.ShoppingList;
 import pro.pantrypilot.db.classes.shoppingList.ShoppingListsDatabase;
 
@@ -24,6 +26,40 @@ public class GetShoppingListWithIngredients implements HttpHandler {
             return;
         }
 
+        // Extract sessionID from cookies for authentication
+        String sessionID = null;
+        String cookieHeader = exchange.getRequestHeaders().getFirst("Cookie");
+
+        if (cookieHeader != null) {
+            String[] cookies = cookieHeader.split(";");
+            for (String cookie : cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith("sessionID=")) {
+                    sessionID = cookie.substring("sessionID=".length());
+                    break;
+                }
+            }
+        }
+
+        // Validate session
+        if (sessionID == null) {
+            logger.debug("No sessionID provided");
+            exchange.sendResponseHeaders(401, -1); // Unauthorized
+            return;
+        }
+
+        Session session = SessionsDatabase.getSession(sessionID);
+        if (session == null) {
+            logger.debug("Invalid sessionID: {}", sessionID);
+            exchange.sendResponseHeaders(401, -1); // Unauthorized
+            return;
+        }
+
+        // Update session activity
+        SessionsDatabase.updateLastUsed(sessionID);
+        String userID = session.getUserID();
+
+        // Parse shoppingListID from URL query parameters
         String query = exchange.getRequestURI().getQuery();
         int shoppingListID;
         try {
@@ -34,10 +70,19 @@ public class GetShoppingListWithIngredients implements HttpHandler {
             return;
         }
 
+        // Get the shopping list with its ingredients
         ShoppingList shoppingList = ShoppingListsDatabase.getShoppingListWithIngredients(shoppingListID);
+
         if (shoppingList == null) {
             logger.debug("Shopping list not found or empty for ID: {}", shoppingListID);
             exchange.sendResponseHeaders(404, -1); // Not Found
+            return;
+        }
+
+        // Verify that the list belongs to the authenticated user
+        if (!shoppingList.getUserID().equals(userID)) {
+            logger.debug("User {} attempted to access list owned by {}", userID, shoppingList.getUserID());
+            exchange.sendResponseHeaders(403, -1); // Forbidden
             return;
         }
 

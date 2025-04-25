@@ -14,7 +14,6 @@ import pro.pantrypilot.helpers.PasswordHasher;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ChangePassword implements HttpHandler {
@@ -23,7 +22,6 @@ public class ChangePassword implements HttpHandler {
 
     // POJO to represent the change password request payload
     private static class ChangePasswordRequest {
-        String username;
         String currentPassword;
         String newPassword;
         String sessionID;
@@ -36,6 +34,21 @@ public class ChangePassword implements HttpHandler {
             logger.debug("Invalid request method: {}", exchange.getRequestMethod());
             exchange.sendResponseHeaders(405, -1); // Method Not Allowed
             return;
+        }
+
+        // Extract sessionID from cookies
+        String sessionID = null;
+        String cookieHeader = exchange.getRequestHeaders().getFirst("Cookie");
+
+        if (cookieHeader != null) {
+            String[] cookies = cookieHeader.split(";");
+            for (String cookie : cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith("sessionID=")) {
+                    sessionID = cookie.substring("sessionID=".length());
+                    break;
+                }
+            }
         }
 
         // Read the JSON payload from the request body
@@ -54,40 +67,44 @@ public class ChangePassword implements HttpHandler {
         ChangePasswordRequest changePasswordRequest;
         try {
             changePasswordRequest = gson.fromJson(requestBody, ChangePasswordRequest.class);
+            changePasswordRequest.sessionID = sessionID;
         } catch (JsonSyntaxException e) {
             logger.error("Error parsing JSON", e);
             sendResponse(exchange, 400, "{\"message\": \"Invalid JSON format\"}");
             return;
         }
 
-        // Retrieve the user from the database and verify the current password
-        User user = UsersDatabase.getUser(changePasswordRequest.username);
-        if (user == null) {
-            logger.debug("Username or password is incorrect: {}", changePasswordRequest.username);
-            sendResponse(exchange, 401, "{\"message\": \"Invalid username or password\"}");
-            return;
-        }
-
         // verify sessionID
         Session session = SessionsDatabase.getSession(changePasswordRequest.sessionID);
-        if (session == null || !session.getUserID().equals(user.getUserID())) {
+        if (session == null) {
             logger.debug("Invalid sessionID: {}", changePasswordRequest.sessionID);
             sendResponse(exchange, 401, "{\"message\": \"Invalid sessionID\"}");
             return;
         }
 
-        // Verify the current password
-        if (!PasswordHasher.verifyPassword(changePasswordRequest.currentPassword, user.getSalt(), user.getPasswordHash())) {
+        // Retrieve the user from the database and verify the current password
+        User user = UsersDatabase.getUserByUserId(session.getUserID());
+        if (user == null) {
+            logger.debug("Username or password is incorrect for userID: {}", session.getUserID());
+            sendResponse(exchange, 401, "{\"message\": \"Invalid username or password\"}");
+            return;
+        }
+
+        // Update session activity
+        SessionsDatabase.updateLastUsed(changePasswordRequest.sessionID);
+
+        // Verify the current password using BCrypt
+        if (!PasswordHasher.verifyPassword(changePasswordRequest.currentPassword, user.getPasswordHash())) {
             logger.debug("Invalid current password for user: {}", user.getUsername());
             sendResponse(exchange, 401, "{\"message\": \"Invalid username or password\"}");
             return;
         }
 
-        // Hash the new password
-        PasswordHasher.Password newPassword = PasswordHasher.generatePassword(changePasswordRequest.username, changePasswordRequest.newPassword);
+        // Hash the new password with BCrypt
+        String newPassword = PasswordHasher.generatePassword(changePasswordRequest.newPassword);
 
         // Update the user's password in the database
-        boolean updateSuccess = UsersDatabase.updateUserPassword(user.getUserID(), newPassword.getHash(), newPassword.getSalt());
+        boolean updateSuccess = UsersDatabase.updateUserPassword(user.getUserID(), newPassword);
 
         if (!updateSuccess) {
             logger.error("Error updating password for user: {}", user.getUsername());

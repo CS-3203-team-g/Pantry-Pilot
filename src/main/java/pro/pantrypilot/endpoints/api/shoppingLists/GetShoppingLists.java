@@ -24,27 +24,63 @@ public class GetShoppingLists implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod()) && 
+            !"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
             logger.debug("Invalid request method: {}", exchange.getRequestMethod());
             exchange.sendResponseHeaders(405, -1); // Method Not Allowed
             return;
         }
 
-        // Read the sessionID from the request body
-        String requestBody;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))) {
-            requestBody = reader.lines().collect(Collectors.joining("\n"));
+        // Extract sessionID from cookies
+        String sessionID = null;
+        String cookieHeader = exchange.getRequestHeaders().getFirst("Cookie");
+
+        if (cookieHeader != null) {
+            String[] cookies = cookieHeader.split(";");
+            for (String cookie : cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith("sessionID=")) {
+                    sessionID = cookie.substring("sessionID=".length());
+                    break;
+                }
+            }
         }
 
-        String sessionID = new Gson().fromJson(requestBody, SessionRequest.class).sessionID;
+        // If sessionID is not found in cookies, try to get it from request body (for backward compatibility)
+        if (sessionID == null && "POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            try {
+                String requestBody;
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))) {
+                    requestBody = reader.lines().collect(Collectors.joining("\n"));
+                }
+
+                if (!requestBody.isEmpty()) {
+                    SessionRequest sessionRequest = new Gson().fromJson(requestBody, SessionRequest.class);
+                    if (sessionRequest != null) {
+                        sessionID = sessionRequest.sessionID;
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error reading request body", e);
+            }
+        }
 
         // Validate sessionID and get userID
+        if (sessionID == null) {
+            logger.debug("No sessionID provided");
+            exchange.sendResponseHeaders(401, -1); // Unauthorized
+            return;
+        }
+
         Session session = SessionsDatabase.getSession(sessionID);
         if (session == null) {
             logger.debug("Invalid sessionID: {}", sessionID);
             exchange.sendResponseHeaders(401, -1); // Unauthorized
             return;
         }
+
+        // Update session activity
+        SessionsDatabase.updateLastUsed(sessionID);
 
         String userID = session.getUserID();
 
@@ -63,7 +99,7 @@ public class GetShoppingLists implements HttpHandler {
         }
     }
 
-    // Inner class to represent the request payload
+    // Inner class to represent the request payload (for backward compatibility)
     private static class SessionRequest {
         String sessionID;
     }

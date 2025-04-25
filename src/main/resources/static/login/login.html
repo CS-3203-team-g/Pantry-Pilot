@@ -133,12 +133,8 @@
                 const errorData = await response.json();
                 alert(`Error: ${errorData.message || 'Unable to login.'}`);
             } else {
-                const result = await response.json();
-
-                // Save sessionID and username to cookies
-                document.cookie = `sessionID=${result.sessionID}; path=/; secure; SameSite=Strict`;
-                document.cookie = `username=${username}; path=/; secure; SameSite=Strict`;
-
+                // No need to set cookies manually anymore, server sets them via HTTP headers
+                
                 // Check for redirect parameter
                 const urlParams = new URLSearchParams(window.location.search);
                 const redirectUrl = urlParams.get('redirect') || '/';

@@ -4,8 +4,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pro.pantrypilot.db.DatabaseConnectionManager;
+import pro.pantrypilot.helpers.PasswordHasher;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.UUID;
 
@@ -21,11 +23,18 @@ class SessionsDatabaseTest {
         SessionsDatabase.initializeSessionsDatabase();
         connection = DatabaseConnectionManager.getConnection();
         
+        // Generate a proper hashed password using PasswordHasher
+        String testPassword = PasswordHasher.generatePassword("testpassword");
+        
         // Create a test user since sessions need a valid user reference
-        String createTestUserSQL = "INSERT INTO users (userID, username, email, passwordHash, salt) VALUES ('" +
-            "test-user-id', 'testuser', 'test@example.com', 'dummyhash', 'dummysalt');";
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(createTestUserSQL);
+        // Using PreparedStatement to avoid SQL injection and properly handle the BCrypt hash
+        String createTestUserSQL = "INSERT INTO users (userID, username, email, passwordHash) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(createTestUserSQL)) {
+            pstmt.setString(1, "test-user-id");
+            pstmt.setString(2, "testuser");
+            pstmt.setString(3, "test@example.com");
+            pstmt.setString(4, testPassword);
+            pstmt.executeUpdate();
         }
     }
 
@@ -115,5 +124,27 @@ class SessionsDatabaseTest {
         String nonExistentSessionId = UUID.randomUUID().toString();
         boolean deleted = SessionsDatabase.deleteSession(nonExistentSessionId);
         assertFalse(deleted, "Deleting non-existent session should return false");
+    }
+
+    @Test
+    void testDeleteExpiredSessions() throws Exception {
+        // Create a session
+        Session newSession = new Session("test-user-id", "127.0.0.1");
+        Session createdSession = SessionsDatabase.createSession(newSession);
+        assertNotNull(createdSession);
+
+        // Manually update the lastUsed timestamp to be older than expiration
+        String updateSQL = "UPDATE sessions SET lastUsed = DATE_SUB(NOW(), INTERVAL 15 DAY) WHERE sessionID = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(updateSQL)) {
+            pstmt.setString(1, createdSession.getSessionID());
+            pstmt.executeUpdate();
+        }
+
+        // Run expiration
+        SessionsDatabase.deleteExpiredSessions();
+
+        // Verify session was deleted
+        Session retrievedSession = SessionsDatabase.getSession(createdSession.getSessionID());
+        assertNull(retrievedSession, "Expired session should be deleted");
     }
 }

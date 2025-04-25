@@ -58,7 +58,7 @@ public class Login implements HttpHandler {
         }
 
         // Retrieve the user from the database
-        User user = UsersDatabase.getUser(loginRequest.username);
+        User user = UsersDatabase.getUserByUsername(loginRequest.username);
 
         if (user == null) {
             logger.debug("User not found: {}", loginRequest.username);
@@ -71,16 +71,16 @@ public class Login implements HttpHandler {
             return;
         }
 
-        // Verify the password
-        if (!PasswordHasher.verifyPassword(loginRequest.password, user.getSalt(), user.getPasswordHash())) {
+        // Verify the password using BCrypt
+        logger.error("password and hash: " + loginRequest.password + " " + user.getPasswordHash());
+        if (!PasswordHasher.verifyPassword(loginRequest.password, user.getPasswordHash())) {
+            logger.debug("Invalid password for user: {}", loginRequest.username);
             sendResponse(exchange, 401, "{\"message\": \"Invalid username or password\"}");
             return;
         }
 
-        Session session = new Session(user.getUserID(), exchange.getRemoteAddress().getAddress().getHostAddress());
+        Session session = new Session(user.getUserID(), getClientIpAddress(exchange));
         session = SessionsDatabase.createSession(session);
-
-//        System.out.println("S ID:" + session.getSessionID());
 
         if(session == null || session.getSessionID() == null) {
             logger.error("Error creating session for user: {}", user.getUsername());
@@ -88,10 +88,22 @@ public class Login implements HttpHandler {
             return;
         }
 
-        // Login successful
+        // Update session's last used time
+        SessionsDatabase.updateLastUsed(session.getSessionID());
+        UsersDatabase.updateUserLastLogin(user);
+
+        // Set cookies securely using HTTP headers - this will be handled by the browser
+        // Set sessionID cookie with HttpOnly flag
+        exchange.getResponseHeaders().add("Set-Cookie", 
+            String.format("sessionID=%s; Path=/; Secure; HttpOnly; SameSite=Strict", session.getSessionID()));
+        
+        // Set username cookie without HttpOnly to allow frontend access
+        exchange.getResponseHeaders().add("Set-Cookie", 
+            String.format("username=%s; Path=/; Secure; SameSite=Strict", loginRequest.username));
+
+        // Login successful - still send a response for the client to process
         sendResponse(exchange, 200, "{\"message\": \"Login successful\",\"sessionID\": \"" + session.getSessionID() + "\"}");
     }
-
 
     private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
@@ -100,5 +112,16 @@ public class Login implements HttpHandler {
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(responseBytes);
         }
+    }
+
+    private String getClientIpAddress(HttpExchange exchange) {
+        // Try to get IP from X-Forwarded-For header first
+        String ip = exchange.getRequestHeaders().getFirst("X-Forwarded-For");
+        if (ip != null && !ip.isEmpty()) {
+            // X-Forwarded-For may contain multiple IPs; get the first one
+            return ip.split(",")[0].trim();
+        }
+        // Fallback to remote address if X-Forwarded-For is not present
+        return exchange.getRemoteAddress().getAddress().getHostAddress();
     }
 }

@@ -69,6 +69,8 @@
                     <a class="nav-link active" aria-current="page" href="/lists">Lists</a>
                 </li>
             </ul>
+            <!-- Login Button (will be replaced if a user is logged in) -->
+            <a id="loginBtn" href="login" class="btn btn-primary ms-3">Login</a>
         </div>
     </div>
 </nav>
@@ -119,8 +121,6 @@
         return null;
     }
 
-    const sessionID = getCookie('sessionID');
-
     function getListID() {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get('id');
@@ -135,6 +135,7 @@
         }
 
         try {
+            // The server now gets the sessionID from the cookie automatically
             const response = await fetch(`/api/getShoppingListWithIngredients?id=${listID}`);
             if (response.status === 404) {
                 const listDetails = document.getElementById('listDetails');
@@ -186,10 +187,10 @@
                     const quantity = this.getAttribute('data-quantity');
                     const unit = this.getAttribute('data-unit');
                     const listID = getListID();
-                    const sessionID = getCookie('sessionID');
 
                     if (confirm('Are you sure you want to delete this ingredient?')) {
                         try {
+                            // We don't need to send sessionID explicitly anymore
                             const response = await fetch('/api/removeIngredientFromShoppingList', {
                                 method: 'POST',
                                 headers: {
@@ -199,8 +200,7 @@
                                     shoppingListID: listID,
                                     ingredientID: ingredientID,
                                     quantity: quantity,
-                                    unit: unit,
-                                    sessionID: sessionID
+                                    unit: unit
                                 })
                             });
 
@@ -259,6 +259,7 @@
         }
 
         try {
+            // We don't need to send sessionID explicitly anymore
             const response = await fetch('/api/addIngredientToShoppingList', {
                 method: 'POST',
                 headers: {
@@ -268,8 +269,7 @@
                     shoppingListID: listID,
                     ingredientID: itemName,
                     quantity: itemQuantity,
-                    unit: itemUnit,
-                    sessionID: sessionID
+                    unit: itemUnit
                 })
             });
 
@@ -287,6 +287,29 @@
         // Clear the input fields
         document.getElementById('newItemQuantity').value = '';
         document.getElementById('newItemUnit').value = '';
+    });
+    
+    // Add login/logout functionality
+    document.addEventListener("DOMContentLoaded", function () {
+        // Check if the user is logged in by looking for the "username" cookie
+        const username = getCookie("username");
+        if (username) {
+            // Replace the login button with a dropdown showing the username
+            const loginBtn = document.getElementById("loginBtn");
+            if (loginBtn) {
+                const dropdownDiv = document.createElement("div");
+                dropdownDiv.className = "dropdown ms-3";
+                dropdownDiv.innerHTML =
+                    '<button class="btn btn-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">' +
+                    username +
+                    '</button>' +
+                    '<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">' +
+                    '<li><a class="dropdown-item" href="/settings">Settings</a></li>' +
+                    '<li><a class="dropdown-item" href="/logout">Sign Out</a></li>' +
+                    "</ul>";
+                loginBtn.parentNode.replaceChild(dropdownDiv, loginBtn);
+            }
+        }
     });
 </script>
 </body>

@@ -170,19 +170,9 @@
                     '</button>' +
                     '<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">' +
                     '<li><a class="dropdown-item" href="/settings">Settings</a></li>' +
-                    '<li><a class="dropdown-item" href="#" id="logoutBtn">Sign Out</a></li>' +
+                    '<li><a class="dropdown-item" href="/logout">Sign Out</a></li>' +
                     "</ul>";
                 loginBtn.parentNode.replaceChild(dropdownDiv, loginBtn);
-
-                // Add event listener for the sign out button
-                document.getElementById("logoutBtn").addEventListener("click", function (e) {
-                    e.preventDefault();
-                    // Remove the cookies by setting their expiration dates to the past
-                    document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                    document.cookie = "sessionID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                    // Reload the page
-                    location.reload();
-                });
             }
         }
     });

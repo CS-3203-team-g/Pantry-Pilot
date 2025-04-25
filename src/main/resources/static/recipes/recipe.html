@@ -180,13 +180,16 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ sessionID: getCookie('sessionID'), recipeID: getRecipeID(), shoppingListID: shoppingListId })
+                body: JSON.stringify({ 
+                    recipeID: getRecipeID(), 
+                    shoppingListID: shoppingListId 
+                })
             });
             if (!response.ok) {
                 var myModal = bootstrap.Modal.getInstance(document.getElementById('addToListModal'));
                 myModal.hide();
                 showFailedToast();
-                throw new Error('Failed to fetch shopping lists');
+                throw new Error('Failed to add ingredients to shopping list');
             }
             var myModal = bootstrap.Modal.getInstance(document.getElementById('addToListModal'));
             myModal.hide();
@@ -196,19 +199,8 @@
             var myModal = bootstrap.Modal.getInstance(document.getElementById('addToListModal'));
             myModal.hide();
             showFailedToast();
-            console.error('Error fetching shopping lists:', error);
+            console.error('Error adding ingredients to shopping list:', error);
         }
-    }
-
-    function getCookie(name) {
-        const nameEQ = name + "=";
-        const ca = document.cookie.split(";");
-        for (let i = 0; i < ca.length; i++) {
-            let c = ca[i];
-            while (c.charAt(0) === " ") c = c.substring(1);
-            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-        }
-        return null;
     }
 
     document.addEventListener("DOMContentLoaded", async function () {
@@ -220,15 +212,13 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ sessionID: getCookie('sessionID') })
+                body: JSON.stringify({}) // Empty body, server gets sessionID from cookies
             });
             if (!response.ok) {
                 throw new Error('Failed to fetch shopping lists');
             }
             const lists = await response.json();
-
             shoppingLists = lists;
-
             lists.forEach(list => {
                 names.push(list.name)
             });
@@ -461,19 +451,9 @@
                     '</button>' +
                     '<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">' +
                     '<li><a class="dropdown-item" href="/settings">Settings</a></li>' +
-                    '<li><a class="dropdown-item" href="#" id="logoutBtn">Sign Out</a></li>' +
+                    '<li><a class="dropdown-item" href="/logout">Sign Out</a></li>' +
                     "</ul>";
                 loginBtn.parentNode.replaceChild(dropdownDiv, loginBtn);
-
-                // Add event listener for the sign out button
-                document.getElementById("logoutBtn").addEventListener("click", function (e) {
-                    e.preventDefault();
-                    // Remove the cookies by setting their expiration dates to the past
-                    document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                    document.cookie = "sessionID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                    // Reload the page
-                    location.reload();
-                });
             }
         }
     });
