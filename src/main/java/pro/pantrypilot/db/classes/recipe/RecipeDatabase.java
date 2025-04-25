@@ -118,20 +118,27 @@ public class RecipeDatabase {
     }
 
     public static Recipe getRecipeWithIngredients(int recipeID) {
+        if (recipeID <= 0) {
+            logger.error("Invalid recipe ID: {}", recipeID);
+            return null;
+        }
+
         String sql = "SELECT r.recipeID, r.title AS recipe_name, r.instructions, r.rating, r.thumbnailUrl, " +
                 "i.ingredientID, i.ingredientName AS ingredient_name, " +
                 "ri.quantity, ri.unit " +
                 "FROM recipes r " +
-                "JOIN recipe_ingredients ri ON r.recipeID = ri.recipeID " +
-                "JOIN ingredients i ON ri.ingredientID = i.ingredientID " +
+                "LEFT JOIN recipe_ingredients ri ON r.recipeID = ri.recipeID " +
+                "LEFT JOIN ingredients i ON ri.ingredientID = i.ingredientID " +
                 "WHERE r.recipeID = ?";
 
         Recipe recipe = null;
         try {
-            // Use the persistent connection (do not include it in try-with-resources to avoid closing it)
             Connection conn = getPersistentConnection();
+            if (conn == null) {
+                logger.error("Failed to get database connection");
+                return null;
+            }
 
-            // Use try-with-resources for PreparedStatement and ResultSet to ensure they are closed.
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setInt(1, recipeID);
                 try (ResultSet rs = stmt.executeQuery()) {
@@ -141,20 +148,41 @@ public class RecipeDatabase {
                             String instructions = rs.getString("instructions");
                             String thumbnailUrl = rs.getString("thumbnailUrl");
                             float rating = rs.getFloat("rating");
+                            
+                            // Validate required fields
+                            if (title == null || instructions == null) {
+                                logger.error("Required recipe fields are null for recipeID: {}", recipeID);
+                                return null;
+                            }
+                            
                             recipe = new Recipe(recipeID, title, thumbnailUrl, instructions, new ArrayList<>(), rating);
                         }
+
+                        // Only add ingredient if it exists
                         int ingredientID = rs.getInt("ingredientID");
-                        String ingredientName = rs.getString("ingredient_name");
-                        int quantity = rs.getInt("quantity");
-                        String unit = rs.getString("unit");
-                        RecipeIngredient ingredient = new RecipeIngredient(recipeID, ingredientID, quantity, unit, ingredientName);
-                        recipe.getIngredients().add(ingredient);
+                        if (!rs.wasNull()) {
+                            String ingredientName = rs.getString("ingredient_name");
+                            int quantity = rs.getInt("quantity");
+                            String unit = rs.getString("unit");
+                            
+                            if (ingredientName != null) {
+                                RecipeIngredient ingredient = new RecipeIngredient(recipeID, ingredientID, quantity, unit, ingredientName);
+                                recipe.getIngredients().add(ingredient);
+                            }
+                        }
                     }
                 }
             }
         } catch (SQLException e) {
             logger.error("Error retrieving recipe with ingredients for recipeID: " + recipeID, e);
+            return null;
         }
+
+        if (recipe == null) {
+            logger.debug("No recipe found for ID: {}", recipeID);
+            return null;
+        }
+
         return recipe;
     }
 }

@@ -68,17 +68,17 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="#">Home</a>
+                    <a class="nav-link active" aria-current="page" href="/">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/recipes">Recipes</a>
+                    <a class="nav-link" href="../recipes/index.html">Recipes</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/lists">Lists</a>
+                    <a class="nav-link" href="../lists/index.html">Lists</a>
                 </li>
             </ul>
             <!-- Login Button (will be replaced if a user is logged in) -->
-            <a id="loginBtn" href="login" class="btn btn-primary ms-3">Login</a>
+            <a id="loginBtn" href="../login/index.html" class="btn btn-primary ms-3">Login</a>
         </div>
     </div>
 </nav>
@@ -117,7 +117,8 @@
                     </button>
                     <div id="menu" class="dropdown-menu" aria-labelledby="dropdown_lists">
                         <form class="px-4 py-2">
-                            <input type="search" class="form-control" id="searchList" placeholder="" autofocus="autofocus">
+                            <label for="searchList" class="form-label">Search Lists</label>
+                            <input type="search" class="form-control" id="searchList" placeholder="Search lists..." autofocus="autofocus">
                         </form>
                         <div id="menuItems"></div>
                         <div id="empty" class="dropdown-header">No lists found</div>
@@ -289,16 +290,6 @@
 
 <!-- JavaScript to fetch and display recipe details -->
 <script>
-    // Utility function for HTML sanitization
-    function sanitize(str) {
-        if (str === null || str === undefined) {
-            return '';
-        }
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
-
     function getRecipeID() {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get('id');
@@ -307,127 +298,81 @@
     document.addEventListener("DOMContentLoaded", async function () {
         const recipeID = getRecipeID();
         const recipeDetails = document.getElementById('recipeDetails');
-        
-        // Add loading state
-        recipeDetails.innerHTML = `
-            <div class="col-12 text-center">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Loading recipe details...</p>
-            </div>`;
-        
-        // Validate recipe ID
-        if (!recipeID || isNaN(parseInt(recipeID)) || parseInt(recipeID) <= 0) {
+
+        console.log('Loading recipe with ID:', recipeID); // Debug log
+
+        if (!recipeID) {
             recipeDetails.innerHTML = `
                 <div class="col-12">
-                    <div class="alert alert-danger" role="alert">
-                        <h4 class="alert-heading">Invalid Recipe</h4>
-                        <p>The recipe ID provided is invalid. Please check the URL and try again.</p>
-                        <hr>
-                        <p class="mb-0"><a href="/recipes" class="alert-link">Return to all recipes</a></p>
+                    <div class="alert alert-danger">
+                        No recipe ID provided
                     </div>
                 </div>`;
             return;
         }
 
         try {
-            const response = await fetch(`/api/getRecipeWithIngredients?id=${encodeURIComponent(recipeID)}`);
-            
+            const response = await fetch(`/api/getRecipeWithIngredients?id=${recipeID}`);
+            console.log('API Response:', response); // Debug log
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error('Failed to fetch recipe details');
             }
-            
+
             const recipe = await response.json();
-            
-            // Validate recipe data
-            if (!recipe || !recipe.title || !recipe.instructions || !Array.isArray(recipe.ingredients)) {
-                throw new Error('Invalid recipe data received');
-            }
+            console.log('Recipe data:', recipe); // Debug log
 
-            // Calculate rating safely
-            const rating = parseFloat(recipe.rating) || 0;
-            const fullStars = Math.floor(rating);
-            const emptyStars = 5 - fullStars;
-
-            // Render recipe only if all checks pass
             recipeDetails.innerHTML = `
                 <div class="col-12">
                     <section id="recipeTitle" class="text-center mb-4">
-                        <h2>${sanitize(recipe.title)}</h2>
+                        <h2>${recipe.title}</h2>
                         <div class="rating">
-                            ${'<i class="fas fa-star"></i>'.repeat(fullStars)}
-                            ${'<i class="far fa-star"></i>'.repeat(emptyStars)}
-                            <span>${rating.toFixed(1)}/5</span>
+                            ${'<i class="fas fa-star"></i>'.repeat(Math.floor(recipe.rating))}
+                            ${'<i class="far fa-star"></i>'.repeat(5 - Math.floor(recipe.rating))}
+                            <span>${recipe.rating.toFixed(1)}/5</span>
                         </div>
                     </section>
                 </div>
                 <div class="col-12">
                     <section id="recipeImage" class="text-center mb-4">
-                        <img src="${sanitize(recipe.thumbnailUrl || 'default-thumbnail.jpg')}" 
+                        <img src="${recipe.thumbnailUrl || 'default-thumbnail.jpg'}" 
                              class="recipe-img img-fluid" 
-                             alt="${sanitize(recipe.title)}" 
-                             style="width: 33%; height: auto;"
-                             onerror="this.src='default-thumbnail.jpg'">
+                             alt="${recipe.title}">
                     </section>
-
                     <div>
                         <section id="recipeActions" class="text-center mb-4">
                             ${getCookie('username') ? `
-                                <button type="button" 
-                                        class="btn btn-primary" 
+                                <button type="button" class="btn btn-primary" 
                                         data-bs-toggle="modal" 
-                                        data-bs-target="#addToListModal" 
-                                        style="width: 15%; height: auto;">
+                                        data-bs-target="#addToListModal">
                                     Add Ingredients
                                 </button>
-                            ` : `
-                                <div class="alert alert-info" role="alert">
-                                    <a href="/login" class="alert-link">Log in</a> to add ingredients to your shopping list
-                                </div>
-                            `}
+                            ` : ''}
                         </section>
                     </div>
                 </div>
                 <div class="col-12">
                     <section id="recipeDirections" class="mb-4">
                         <h4>Instructions</h4>
-                        <p>${sanitize(recipe.instructions)}</p>
+                        <p>${recipe.instructions}</p>
                     </section>
                 </div>
                 <div class="col-12">
                     <section id="recipeIngredients" class="mb-4">
                         <h4>Ingredients</h4>
-                        ${recipe.ingredients && recipe.ingredients.length > 0 ? `
-                            <ul>
-                                ${recipe.ingredients.map(ingredient => `
-                                    <li>
-                                        ${sanitize(String(ingredient.quantity || ''))} 
-                                        ${sanitize(ingredient.unit || '')} 
-                                        ${sanitize(ingredient.ingredientName || 'Unknown Ingredient')}
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        ` : `
-                            <p class="text-muted">No ingredients listed for this recipe.</p>
-                        `}
+                        <ul>
+                            ${recipe.ingredients.map(ingredient => `
+                                <li>${ingredient.quantity} ${ingredient.unit} ${ingredient.ingredientName}</li>
+                            `).join('')}
+                        </ul>
                     </section>
                 </div>`;
-
         } catch (error) {
-            console.error('Error fetching recipe details:', error);
+            console.error('Error:', error); // Debug log
             recipeDetails.innerHTML = `
                 <div class="col-12">
-                    <div class="alert alert-danger" role="alert">
-                        <h4 class="alert-heading">Error Loading Recipe</h4>
-                        <p>We couldn't load this recipe. This might be because:</p>
-                        <ul>
-                            <li>The recipe doesn't exist</li>
-                            <li>You don't have permission to view this recipe</li>
-                            <li>There was a problem connecting to the server</li>
-                        </ul>
-                        <hr>
-                        <p class="mb-0">Please try again later or <a href="/recipes" class="alert-link">return to all recipes</a>.</p>
+                    <div class="alert alert-danger">
+                        Error loading recipe. Please try again later.
                     </div>
                 </div>`;
         }
