@@ -1,5 +1,8 @@
 package pro.pantrypilot.db.classes.session;
 
+import pro.pantrypilot.db.classes.user.User;
+import pro.pantrypilot.db.classes.user.UsersDatabase;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -11,6 +14,7 @@ public class Session {
     private Timestamp createdAt;
     private Timestamp lastUsed;
     private String ipAddress;
+    private boolean isValid;
 
     /**
      * Constructor used for creating a new Session before it is inserted into the database.
@@ -37,6 +41,22 @@ public class Session {
         this.createdAt = resultSet.getTimestamp("createdAt");
         this.lastUsed = resultSet.getTimestamp("lastUsed");
         this.ipAddress = resultSet.getString("ipAddress");
+        this.isValid = true; // if it came from the database, it is automatically valid
+    }
+
+    public Session(String sessionID){
+        Session sessionFromDb = SessionsDatabase.getSession(sessionID);
+        if(sessionFromDb == null){
+            this.isValid = false;
+            return;
+        }
+        this.sessionID = sessionID;
+        this.userID = sessionFromDb.getUserID();
+        this.createdAt = sessionFromDb.getCreatedAt();
+        this.lastUsed = sessionFromDb.getLastUsed();
+        this.ipAddress = sessionFromDb.getIpAddress();
+        this.isValid = true;
+        updateLastUsed();
     }
 
     // Getters and setters
@@ -55,6 +75,10 @@ public class Session {
 
     public void setUserID(String userID) {
         this.userID = userID;
+    }
+
+    public User getUser() {
+        return UsersDatabase.getUserByUserId(userID);
     }
 
     public Timestamp getCreatedAt() {
@@ -79,5 +103,13 @@ public class Session {
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
+    }
+
+    public boolean isValid() {
+        return isValid;
+    }
+
+    public void updateLastUsed(){
+        SessionsDatabase.updateLastUsed(sessionID);
     }
 }

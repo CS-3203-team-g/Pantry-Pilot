@@ -157,4 +157,62 @@ public class RecipeDatabase {
         }
         return recipe;
     }
+
+    public static int getTotalRecipeCount() {
+        String sql = "SELECT COUNT(*) FROM recipes";
+        try {
+            Connection conn = getPersistentConnection();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(sql)) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error retrieving total recipe count", e);
+        }
+        return 0;
+    }
+
+    public static ArrayList<Recipe> getAllRecipes() {
+        String getAllRecipesSQL = "SELECT * FROM recipes;";
+        ArrayList<Recipe> recipes = new ArrayList<>();
+        try {
+            Connection conn = getPersistentConnection();
+            try (Statement statement = conn.createStatement();
+                 ResultSet resultSet = statement.executeQuery(getAllRecipesSQL)) {
+
+                while (resultSet.next()) {
+                    Recipe recipe = new Recipe(resultSet);
+                    recipes.add(recipe);
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error retrieving recipes", e);
+        }
+        return recipes;
+    }
+
+    public static boolean loadAllRecipes(ArrayList<Recipe> recipes) {
+        String insertRecipeSQL = "INSERT INTO recipes (recipeID, title, instructions, thumbnailUrl, rating) VALUES (?, ?, ?, ?, ?)";
+
+        try {
+            Connection conn = getPersistentConnection();
+            try (PreparedStatement preparedStatement = conn.prepareStatement(insertRecipeSQL)) {
+                for (Recipe recipe : recipes) {
+                    preparedStatement.setInt(1, recipe.getRecipeID());
+                    preparedStatement.setString(2, recipe.getTitle());
+                    preparedStatement.setString(3, recipe.getInstructions());
+                    preparedStatement.setString(4, recipe.getThumbnailUrl());
+                    preparedStatement.setFloat(5, recipe.getRating());
+                    preparedStatement.addBatch();
+                }
+                preparedStatement.executeBatch();
+            }
+        } catch (SQLException e) {
+            logger.error("Error replacing all recipes", e);
+            return false;
+        }
+        return true;
+    }
 }

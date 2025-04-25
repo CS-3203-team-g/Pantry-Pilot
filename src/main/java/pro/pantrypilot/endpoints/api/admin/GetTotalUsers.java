@@ -1,4 +1,4 @@
-package pro.pantrypilot.endpoints.pages;
+package pro.pantrypilot.endpoints.api.admin;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -6,22 +6,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.pantrypilot.db.classes.session.Session;
 import pro.pantrypilot.db.classes.session.SessionsDatabase;
-import pro.pantrypilot.endpoints.api.signup.CreateUser;
+import pro.pantrypilot.db.classes.user.User;
+import pro.pantrypilot.db.classes.user.UsersDatabase;
+import pro.pantrypilot.endpoints.pages.admin.Admin;
 import pro.pantrypilot.helpers.FileHelper;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
-public class Index implements HttpHandler {
+public class GetTotalUsers implements HttpHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(Index.class);
+    private static final Logger logger = LoggerFactory.getLogger(GetTotalUsers.class);
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-
-        logger.debug("Handling updated request for index.html");
 
         // Extract sessionID from cookies
         String sessionID = null;
@@ -38,28 +37,33 @@ public class Index implements HttpHandler {
             }
         }
 
-        boolean isAdmin = false;
-
         Session session = SessionsDatabase.getSession(sessionID);
-        if (session != null && session.isValid() && session.getUser() != null && session.getUser().isAdmin()) {
-            isAdmin = true;
-
+        if(!session.isValid()) {
+            logger.debug("Session not found, redirecting to login");
+            exchange.getResponseHeaders().add("Location", "/login");
+            exchange.sendResponseHeaders(302, -1);
+            return;
         }
 
-        byte[] responseBytes;
-        try {
-            // Read the file as bytes and then convert to String with UTF-8 encoding
-            byte[] fileBytes = FileHelper.readFile("static/index.html");
-            String response = new String(fileBytes, StandardCharsets.UTF_8);
-            // add admin to dropdown if the user is an admin
-            if(isAdmin){
-                response = response.replace("//ADMIN_DROPDOWN_REPLACE", "'<li><a class=\"dropdown-item\" href=\"/admin\">Admin</a></li>' +");
-            }
-            responseBytes = response.getBytes(StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            logger.error("Error reading index.html", e);
-            responseBytes = "Error: Unable to load index.html".getBytes(StandardCharsets.UTF_8);
+        User user = session.getUser();
+        if(user == null) {
+            logger.error("User not found for sessionID: {}", sessionID);
+            exchange.sendResponseHeaders(500, -1);
+            return;
         }
+
+        if(!user.isAdmin()){
+            logger.debug("User is not an admin, redirecting to index");
+            exchange.getResponseHeaders().add("Location", "/");
+            exchange.sendResponseHeaders(302, -1);
+            return;
+        }
+
+        logger.debug("Getting total users");
+        int totalUsers = UsersDatabase.getTotalUsers();
+
+        String response = String.valueOf(totalUsers);
+        byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
 
         exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
         exchange.sendResponseHeaders(200, responseBytes.length);

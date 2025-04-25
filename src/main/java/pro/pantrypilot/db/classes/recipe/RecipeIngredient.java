@@ -1,6 +1,14 @@
 package pro.pantrypilot.db.classes.recipe;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 public class RecipeIngredient {
+
+    private static final Logger logger = LoggerFactory.getLogger(RecipeIngredient.class);
 
     private final int recipeID;
     private final int ingredientID;
@@ -22,6 +30,19 @@ public class RecipeIngredient {
         this.quantity = quantity;
         this.unit = unit;
         this.ingredientName = ingredientName;
+    }
+
+    public RecipeIngredient(ResultSet rs) {
+        try {
+            this.recipeID = rs.getInt("recipeID");
+            this.ingredientID = rs.getInt("ingredientID");
+            this.quantity = rs.getInt("quantity");
+            this.unit = rs.getString("unit");
+            this.ingredientName = rs.getString("ingredient_name");
+        } catch (SQLException e) {
+            logger.error(e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
 

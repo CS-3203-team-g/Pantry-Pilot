@@ -94,7 +94,9 @@ public class SessionsDatabase {
             
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {  // Move cursor to the first row
-                    return new Session(resultSet);
+                    Session session = new Session(resultSet);
+                    session.updateLastUsed();
+                    return session;
                 } else {
                     return null; // No session found with the given sessionID
                 }
@@ -119,6 +121,7 @@ public class SessionsDatabase {
             preparedStatement.setString(1, sessionID);
             
             int rowsAffected = preparedStatement.executeUpdate();
+            logger.error("Rows Affected By updateLastUsed: " + rowsAffected);
             return rowsAffected > 0;
         } catch (SQLException e) {
             logger.error("Error updating lastUsed timestamp", e);
@@ -159,6 +162,20 @@ public class SessionsDatabase {
             }
         } catch (SQLException e) {
             logger.error("Error deleting expired sessions", e);
+        }
+    }
+
+    public static int getActiveUsersLast30m(){
+        String countActiveUsersSQL = "SELECT COUNT(DISTINCT userID) FROM sessions WHERE lastUsed > DATE_SUB(NOW(), INTERVAL 30 MINUTE)";
+        try (ResultSet resultSet = DatabaseConnectionManager.getConnection().createStatement().executeQuery(countActiveUsersSQL)) {
+            if (resultSet.next()) {
+                return resultSet.getInt(1);
+            } else {
+                return 0;
+            }
+        } catch (SQLException e) {
+            logger.error("Error counting active users", e);
+            return 0;
         }
     }
 }

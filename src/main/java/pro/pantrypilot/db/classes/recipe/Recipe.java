@@ -3,6 +3,8 @@ package pro.pantrypilot.db.classes.recipe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class Recipe {
@@ -32,6 +34,19 @@ public class Recipe {
         this.thumbnailUrl = thumbnailUrl;
         this.instructions = instructions;
         this.rating = rating;
+    }
+
+    public Recipe(ResultSet resultSet){
+        try {
+            this.recipeID = resultSet.getInt("recipeID");
+            this.title = resultSet.getString("title");
+            this.thumbnailUrl = resultSet.getString("thumbnailUrl");
+            this.instructions = resultSet.getString("instructions");
+            this.rating = resultSet.getFloat("rating");
+        } catch (SQLException e) {
+            logger.error("Error creating recipe from ResultSet", e);
+            throw new RuntimeException(e);
+        }
     }
 
     public int getRecipeID() {

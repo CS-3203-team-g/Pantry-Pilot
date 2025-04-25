@@ -15,24 +15,23 @@ public class User {
     private Timestamp createdAt;
     private Timestamp lastLogin;
     private boolean isActive;
+    private boolean isAdmin;
 
     // Constructor for new users (auto-generates userID)
     public User(String username, String email, String plaintextPassword) {
-        this.userID = UUID.randomUUID().toString(); // Auto-generate UUID in Java
+        this.userID = UUID.randomUUID().toString();
         this.username = username;
         this.email = email;
-
-        // BCrypt stores salt as part of the hash
         this.passwordHash = PasswordHasher.generatePassword(plaintextPassword);
-
-        this.isActive = true; // Default value
-        this.createdAt = new Timestamp(System.currentTimeMillis()); // Set current timestamp
-        this.lastLogin = null; // Not logged in yet
+        this.isActive = true;
+        this.isAdmin = false;
+        this.createdAt = new Timestamp(System.currentTimeMillis());
+        this.lastLogin = null;
     }
 
     // Constructor for loading existing users from the database
     public User(String userID, String username, String email, String passwordHash,
-                Timestamp createdAt, Timestamp lastLogin, boolean isActive) {
+                Timestamp createdAt, Timestamp lastLogin, boolean isActive, boolean isAdmin) {
         this.userID = userID;
         this.username = username;
         this.email = email;
@@ -40,6 +39,7 @@ public class User {
         this.createdAt = createdAt;
         this.lastLogin = lastLogin;
         this.isActive = isActive;
+        this.isAdmin = isAdmin;
     }
 
     public User(ResultSet resultSet) {
@@ -51,6 +51,7 @@ public class User {
             this.createdAt = resultSet.getTimestamp("createdAt");
             this.lastLogin = resultSet.getTimestamp("lastLogin");
             this.isActive = resultSet.getBoolean("isActive");
+            this.isAdmin = resultSet.getBoolean("isAdmin");
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException("Error constructing User from ResultSet", e);
@@ -110,6 +111,14 @@ public class User {
         return isActive;
     }
 
+    public boolean isAdmin() {
+        return isAdmin;
+    }
+
+    public void setAdmin(boolean admin) {
+        isAdmin = admin;
+    }
+
     @Override
     public String toString() {
         return "User{" +
@@ -119,6 +128,7 @@ public class User {
                 ", createdAt=" + createdAt +
                 ", lastLogin=" + lastLogin +
                 ", isActive=" + isActive +
+                ", isAdmin=" + isAdmin +
                 '}';
     }
 }
