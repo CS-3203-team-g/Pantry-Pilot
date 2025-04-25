@@ -4,6 +4,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pro.pantrypilot.db.DatabaseConnectionManager;
+import pro.pantrypilot.db.classes.user.UsersDatabase;
 import pro.pantrypilot.helpers.PasswordHasher;
 
 import java.sql.Connection;
@@ -20,6 +21,7 @@ class SessionsDatabaseTest {
     @BeforeEach
     void setUp() throws Exception {
         // Initialize the test database
+        UsersDatabase.initializeUserDatabase();
         SessionsDatabase.initializeSessionsDatabase();
         connection = DatabaseConnectionManager.getConnection();
         
