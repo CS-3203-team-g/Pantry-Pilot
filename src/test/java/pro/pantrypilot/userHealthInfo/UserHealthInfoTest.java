@@ -50,12 +50,11 @@ class UserHealthInfoTest {
         double goalWeight = 70.0;
         double height = 180.0;
         int age = 30;
-        String gender = "Male";
         String dietaryPreference = "Vegan";
         String activityLevel = "Sedentary";
         Timestamp updatedAt = new Timestamp(System.currentTimeMillis());
 
-        UserHealthInfo info = new UserHealthInfo(healthInfoID, userID, weight, goalWeight, height, age, gender, dietaryPreference, activityLevel, updatedAt);
+        UserHealthInfo info = new UserHealthInfo(healthInfoID, userID, weight, goalWeight, height, age, dietaryPreference, activityLevel, updatedAt);
 
         assertEquals(healthInfoID, info.getHealthInfoID());
         assertEquals(userID, info.getUserID());
@@ -64,7 +63,6 @@ class UserHealthInfoTest {
         assertEquals(goalWeight, info.getGoalWeight());
         assertEquals(height, info.getHeight());
         assertEquals(age, info.getAge());
-        assertEquals(gender, info.getGender());
         assertEquals(dietaryPreference, info.getDietaryPreferences());
         assertEquals(activityLevel, info.getActivityLevel());
         assertEquals(updatedAt, info.getUpdatedAt());

@@ -3,7 +3,12 @@ package pro.pantrypilot.db.classes.userHealthInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.pantrypilot.db.DatabaseConnectionManager;
+import pro.pantrypilot.db.classes.session.Session;
+import pro.pantrypilot.db.classes.session.SessionsDatabase;
+import pro.pantrypilot.db.classes.user.User;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -13,8 +18,8 @@ public class UserHealthInfoDatabase {
     public static void initializeUserHealthInfoDatabase() {
         String createUserHealthInfoTableSQL =
                 "CREATE TABLE IF NOT EXISTS user_health_info (\n" +
-                        "    healthInfoID VARCHAR(36) PRIMARY KEY,\n" +
-                        "    userID CHAR(36) NOT NULL,\n" +
+                        "    healthInfoID VARCHAR(36) NOT NULL UNIQUE,\n" +
+                        "    userID CHAR(36) PRIMARY KEY ,\n" +
                         "    currWeight DOUBLE NOT NULL,\n" +
                         "    goalWeight DOUBLE NOT NULL,\n" +
                         "    height DOUBLE NOT NULL,\n" +
@@ -52,6 +57,25 @@ public class UserHealthInfoDatabase {
         } catch (SQLException e) {
             LOGGER.error("Error creating user health info", e);
             return false;
+        }
+    }
+
+    public static UserHealthInfo getUserHealthInfo(String userID) {
+
+        String getUserHealthInfoSQL = "SELECT * FROM user_health_info WHERE userID = ?";
+        try (PreparedStatement preparedStatement = DatabaseConnectionManager.getConnection().prepareStatement(getUserHealthInfoSQL)) {
+            preparedStatement.setString(1, userID);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {  // Move cursor to the first row
+                    return new UserHealthInfo(resultSet);
+                } else {
+                    return null; // No user found with the given username
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Error retrieving user", e);
+            return null;
         }
     }
 }

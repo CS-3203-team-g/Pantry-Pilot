@@ -31,14 +31,13 @@ public class UserHealthInfo {
     }
 
     // Constructor for loading existing user health info from database
-    public UserHealthInfo(String healthInfoID, String userID, double currWeight, double goalWeight, double height, int age, String gender, String dietaryPreferences, String activityLevel, Timestamp updatedAt) {
+    public UserHealthInfo(String healthInfoID, String userID, double currWeight, double goalWeight, double height, int age, String dietaryPreferences, String activityLevel, Timestamp updatedAt) {
         this.userHealthInfoID = healthInfoID;
         this.userID = userID;
         this.currWeight = currWeight;
         this.goalWeight = goalWeight;
         this.height = height;
         this.age = age;
-        this.gender = gender;
         this.dietaryPreference = dietaryPreferences;
         this.activityLevel = activityLevel;
         this.updatedAt = updatedAt;
@@ -53,7 +52,6 @@ public class UserHealthInfo {
             this.goalWeight = resultSet.getDouble("goalWeight");
             this.height = resultSet.getDouble("height");
             this.age = resultSet.getInt("age");
-            this.gender = resultSet.getString("gender");
             this.dietaryPreference = resultSet.getString("dietaryPreferences");
             this.activityLevel = resultSet.getString("activityLevel");
             this.updatedAt = resultSet.getTimestamp("updatedAt");

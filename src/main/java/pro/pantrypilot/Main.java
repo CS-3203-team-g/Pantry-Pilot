@@ -60,6 +60,7 @@ public class Main {
         server.createContext("/api/addRecipeIngredientsToShoppingList", new pro.pantrypilot.endpoints.api.shoppingLists.AddRecipeIngredientsToShoppingList());
         server.createContext("/api/removeIngredientFromShoppingList", new pro.pantrypilot.endpoints.api.shoppingLists.RemoveIngredientFromShoppingList());
         server.createContext("/api/updateHealthStats", new pro.pantrypilot.endpoints.api.userStats.UpdateHealthStats());
+        server.createContext("/api/getHealthStats", new pro.pantrypilot.endpoints.api.userStats.GetHealthStats());
 
 //      Admin pages
         server.createContext("/admin", new pro.pantrypilot.endpoints.pages.admin.Admin());

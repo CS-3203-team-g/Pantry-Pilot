@@ -7,13 +7,11 @@ import com.sun.net.httpserver.HttpHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pro.pantrypilot.db.classes.user.UsersDatabase;
 import pro.pantrypilot.db.classes.userHealthInfo.UserHealthInfo;
 import pro.pantrypilot.db.classes.userHealthInfo.UserHealthInfoDatabase;
 import pro.pantrypilot.db.classes.session.Session;
 import pro.pantrypilot.db.classes.session.SessionsDatabase;
-import pro.pantrypilot.endpoints.api.shoppingLists.GetShoppingLists;
-import pro.pantrypilot.endpoints.api.userStats.UpdateHealthStats;
+
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
