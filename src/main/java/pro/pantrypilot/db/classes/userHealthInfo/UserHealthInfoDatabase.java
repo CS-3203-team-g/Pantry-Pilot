@@ -78,5 +78,34 @@ public class UserHealthInfoDatabase {
             return null;
         }
     }
+
+    public static boolean editUserHealthInfo(UserHealthInfo userHealthInfo) {
+        String updateSQL = "UPDATE user_health_info SET " +
+                "currWeight = ?, " +
+                "goalWeight = ?, " +
+                "height = ?, " +
+                "age = ?, " +
+                "activityLevel = ?, " +
+                "dietaryPreferences = ?, " +
+                "updatedAt = CURRENT_TIMESTAMP " +
+                "WHERE userID = ?";
+
+        try (PreparedStatement preparedStatement = DatabaseConnectionManager.getConnection().prepareStatement(updateSQL)) {
+            preparedStatement.setDouble(1, userHealthInfo.getCurrWeight());
+            preparedStatement.setDouble(2, userHealthInfo.getGoalWeight());
+            preparedStatement.setDouble(3, userHealthInfo.getHeight());
+            preparedStatement.setInt(4, userHealthInfo.getAge());
+            preparedStatement.setString(5, userHealthInfo.getActivityLevel());
+            preparedStatement.setString(6, userHealthInfo.getDietaryPreferences());
+            preparedStatement.setString(7, userHealthInfo.getUserID());
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            LOGGER.error("Error updating user health info", e);
+            return false;
+        }
+    }
+
 }
 

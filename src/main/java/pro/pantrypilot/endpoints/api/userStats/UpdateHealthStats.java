@@ -98,7 +98,14 @@ public class UpdateHealthStats implements HttpHandler {
         UserHealthInfo userHealthInfo = new UserHealthInfo(userID, updateHealthStatsRequest.currWeight,
                 updateHealthStatsRequest.goalWeight, updateHealthStatsRequest.height, updateHealthStatsRequest.age,
                 updateHealthStatsRequest.gender, updateHealthStatsRequest.dietaryPreferences, updateHealthStatsRequest.activityLevel);
-        boolean success = UserHealthInfoDatabase.createUserHealthInfo(userHealthInfo);
+        boolean success = false;
+        if(UserHealthInfoDatabase.getUserHealthInfo(userID) != null) {
+            success = UserHealthInfoDatabase.editUserHealthInfo(userHealthInfo);
+        }
+        else {
+            success = UserHealthInfoDatabase.createUserHealthInfo(userHealthInfo);
+        }
+
 
         if(success){
             sendResponse(exchange, 201, "{\"message\": \"User created successfully\", \"sessionID\": \"" + session.getSessionID() + "\"}");

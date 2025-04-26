@@ -180,6 +180,7 @@
     });
 
     //need to add an edit button and be able to edit stats.
+    const userHealthInfoContainer = document.getElementById("userHealthInfoContainer")
     const weightUnit = document.getElementById("weightUnit");
     const selectedUnit = document.getElementsByClassName("unit-display")
     const userStatsForm = document.getElementById("userStatsForm")
@@ -202,6 +203,11 @@
         for(let span of selectedUnit){
             span.innerText = this.value;
         }
+    })
+
+    userHealthInfoContainer.addEventListener("click", () => {
+        document.getElementById("userStatsForm").style.display = "block";
+        userHealthInfoContainer.style.display = "none";
     })
 
     userStatsForm.addEventListener("submit",
