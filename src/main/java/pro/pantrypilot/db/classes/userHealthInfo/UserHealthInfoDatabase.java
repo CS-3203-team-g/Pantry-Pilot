@@ -39,27 +39,27 @@ public class UserHealthInfoDatabase {
 
     public static boolean createUserHealthInfo(UserHealthInfo userHealthInfo) {
 
-        String createUserHealthInfoSQL = "INSERT INTO user_health_info (healthInfoID, userID, currWeight, goalWeight, height, age, activityLevel, dietaryPreferences, updatedAt) VALUES ('"
-                + userHealthInfo.getHealthInfoID() + "', '"
-                + userHealthInfo.getUserID() + "', '"
-                + userHealthInfo.getCurrWeight() + "', '"
-                + userHealthInfo.getGoalWeight() + "', '"
-                + userHealthInfo.getHeight() + "', '"
-                + userHealthInfo.getAge() + "', '"
-                + userHealthInfo.getActivityLevel() + "', '"
-                + userHealthInfo.getDietaryPreferences() + "', '"
-                + userHealthInfo.getUpdatedAt() + "');";
-        try {
-            int rowsAffected = DatabaseConnectionManager.getConnection()
-                    .createStatement()
-                    .executeUpdate(createUserHealthInfoSQL);
+        String createUserHealthInfoSQL = "INSERT INTO user_health_info (healthInfoID, userID, currWeight, goalWeight, height, age, activityLevel, dietaryPreferences, updatedAt) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement preparedStatement = DatabaseConnectionManager.getConnection().prepareStatement(createUserHealthInfoSQL)) {
+            preparedStatement.setString(1, userHealthInfo.getHealthInfoID());
+            preparedStatement.setString(2, userHealthInfo.getUserID());
+            preparedStatement.setDouble(3, userHealthInfo.getCurrWeight());
+            preparedStatement.setDouble(4, userHealthInfo.getGoalWeight());
+            preparedStatement.setDouble(5, userHealthInfo.getHeight());
+            preparedStatement.setInt(6, userHealthInfo.getAge());
+            preparedStatement.setString(7, userHealthInfo.getActivityLevel());
+            preparedStatement.setString(8, userHealthInfo.getDietaryPreferences());
+            preparedStatement.setTimestamp(9, userHealthInfo.getUpdatedAt());
+
+            int rowsAffected = preparedStatement.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
             LOGGER.error("Error creating user health info", e);
             return false;
         }
     }
-
     public static UserHealthInfo getUserHealthInfo(String userID) {
 
         String getUserHealthInfoSQL = "SELECT * FROM user_health_info WHERE userID = ?";

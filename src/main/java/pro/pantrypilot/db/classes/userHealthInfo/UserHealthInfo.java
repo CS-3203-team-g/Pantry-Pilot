@@ -27,7 +27,7 @@ public class UserHealthInfo {
         this.gender = gender;
         this.dietaryPreference = dietaryPreferences;
         this.activityLevel = activityLevel;
-        this.updatedAt = new Timestamp(System.currentTimeMillis()); // Set update timestam
+        this.updatedAt = new Timestamp(System.currentTimeMillis()); // Set update timestamp
     }
 
     // Constructor for loading existing user health info from database

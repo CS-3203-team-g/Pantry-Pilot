@@ -12,19 +12,16 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
 
 public class GetHealthStats implements HttpHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(UpdateHealthStats.class);
+    private static final Logger logger = LoggerFactory.getLogger(GetHealthStats.class);
 
     private static final Gson gson = new Gson(); // you need GSON for JSON parsing
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        System.out.println("Request received at /api/getHealthStats with method: " + exchange.getRequestMethod());
+        logger.info("Request received at /api/getHealthStats with method: [{}]", exchange.getRequestMethod());
 
         if (!"GET".equals(exchange.getRequestMethod())) {
             logger.debug("Invalid request received: {}", exchange.getRequestMethod());

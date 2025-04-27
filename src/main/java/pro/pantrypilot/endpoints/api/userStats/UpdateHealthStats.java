@@ -34,7 +34,7 @@ public class UpdateHealthStats implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        System.out.println("Request received at /api/updateHealthStats with method: " + exchange.getRequestMethod());
+        logger.info("Request received at /api/updateHealthStats with method: [{}] ", exchange.getRequestMethod());
 
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
             logger.debug("Invalid request method: {}", exchange.getRequestMethod());
@@ -111,6 +111,7 @@ public class UpdateHealthStats implements HttpHandler {
             sendResponse(exchange, 201, "{\"message\": \"User created successfully\", \"sessionID\": \"" + session.getSessionID() + "\"}");
         }
         if (!success) {
+            sendResponse(exchange, 500, "{\"message\": \"Error creating or updating user health info\"}");
             logger.debug("Error creating user health info");
         }
     }

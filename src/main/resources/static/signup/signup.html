@@ -154,8 +154,6 @@
                 body: JSON.stringify(payload)
             });
 
-            console.log(response)
-
             if (!response.ok) {
                 // Extract error message from the response if available
                 const errorData = await response.json();
