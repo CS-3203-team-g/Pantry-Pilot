@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.pantrypilot.db.classes.recipe.Recipe;
 import pro.pantrypilot.db.classes.recipe.RecipeDatabase;
+import pro.pantrypilot.validation.RecipeValidator;
+import pro.pantrypilot.validation.ValidationResult;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -26,6 +28,15 @@ public class GetRecipesWithIngredients implements HttpHandler {
         }
 
         List<Recipe> recipes = RecipeDatabase.getRecipesWithIngredients();
+        
+        // Add validation for each recipe
+        for (Recipe recipe : recipes) {
+            ValidationResult result = RecipeValidator.validateRecipe(recipe.getTitle());
+            logger.info("Client-side validation for '{}': {}", 
+                recipe.getTitle(), 
+                result.isValid() ? "VALID" : "INVALID - " + result.getErrorMessage());
+        }
+
         Gson gson = new Gson();
         String jsonResponse = gson.toJson(recipes);
 

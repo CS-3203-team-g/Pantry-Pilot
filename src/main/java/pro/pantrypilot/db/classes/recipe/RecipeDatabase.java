@@ -3,6 +3,8 @@ package pro.pantrypilot.db.classes.recipe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.pantrypilot.db.DatabaseConnectionManager;
+import pro.pantrypilot.validation.RecipeValidator;
+import pro.pantrypilot.validation.ValidationResult;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -200,6 +202,11 @@ public class RecipeDatabase {
             Connection conn = getPersistentConnection();
             try (PreparedStatement preparedStatement = conn.prepareStatement(insertRecipeSQL)) {
                 for (Recipe recipe : recipes) {
+                    // Add more visible logging
+                    logger.info("=== Validating Recipe: " + recipe.getTitle() + " ===");
+                    ValidationResult result = RecipeValidator.validateRecipe(recipe.getTitle());
+                    logger.info("Validation result: " + (result.isValid() ? "VALID" : "INVALID"));
+                    
                     preparedStatement.setInt(1, recipe.getRecipeID());
                     preparedStatement.setString(2, recipe.getTitle());
                     preparedStatement.setString(3, recipe.getInstructions());
@@ -214,5 +221,14 @@ public class RecipeDatabase {
             return false;
         }
         return true;
+    }
+
+    public static Recipe getRecipeByName(String recipeName) {
+        ValidationResult result = RecipeValidator.validateRecipe(recipeName);
+        if (!result.isValid()) {
+            return null;
+        }
+        // Continue with recipe retrieval...
+        return null; // Placeholder return, actual implementation needed
     }
 }

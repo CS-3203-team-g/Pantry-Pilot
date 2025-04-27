@@ -107,6 +107,24 @@
         return null;
     }
 
+    // Add this validation function at the top of your script
+    function validateRecipe(recipe) {
+        // Check if recipe has a title
+        if (!recipe.title || recipe.title.trim() === '') {
+            console.warn(`Invalid recipe: Missing title`);
+            return false;
+        }
+        
+        // Check if recipe has a valid rating (between 0 and 5)
+        if (recipe.rating < 0 || recipe.rating > 5) {
+            console.warn(`Recipe "${recipe.title}": Invalid rating ${recipe.rating}`);
+            return false;
+        }
+
+        console.log(`Recipe "${recipe.title}" passed validation`);
+        return true;
+    }
+
     document.addEventListener("DOMContentLoaded", async function () {
         // Check if the user is logged in by looking for the "username" cookie
         const username = getCookie("username");
@@ -137,6 +155,12 @@
             const recipeGrid = document.getElementById('recipeGrid');
 
             recipes.forEach(recipe => {
+                // Add validation check
+                if (!validateRecipe(recipe)) {
+                    console.warn(`Skipping invalid recipe:`, recipe);
+                    return; // Skip this recipe if validation fails
+                }
+
                 const col = document.createElement('div');
                 col.className = 'col-md-4 mb-4';
                 col.innerHTML = `
