@@ -88,7 +88,7 @@ public class UpdateHealthStats implements HttpHandler {
             logger.error("Invalid JSON format: {}", requestBody);
             exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
             byte[] errorBytes = errorResponse.getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(405, errorBytes.length);
+            exchange.sendResponseHeaders(400, errorBytes.length);
             try(OutputStream os = exchange.getResponseBody()) {
                 os.write(errorBytes);
             }
