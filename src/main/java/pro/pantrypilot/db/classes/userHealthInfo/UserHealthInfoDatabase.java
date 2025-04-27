@@ -20,6 +20,7 @@ public class UserHealthInfoDatabase {
                 "CREATE TABLE IF NOT EXISTS user_health_info (\n" +
                         "    healthInfoID VARCHAR(36) NOT NULL UNIQUE,\n" +
                         "    userID CHAR(36) PRIMARY KEY ,\n" +
+                        "    gender VARCHAR(36) NOT NULL,\n" +
                         "    currWeight DOUBLE NOT NULL,\n" +
                         "    goalWeight DOUBLE NOT NULL,\n" +
                         "    height DOUBLE NOT NULL,\n" +
@@ -39,19 +40,20 @@ public class UserHealthInfoDatabase {
 
     public static boolean createUserHealthInfo(UserHealthInfo userHealthInfo) {
 
-        String createUserHealthInfoSQL = "INSERT INTO user_health_info (healthInfoID, userID, currWeight, goalWeight, height, age, activityLevel, dietaryPreferences, updatedAt) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String createUserHealthInfoSQL = "INSERT INTO user_health_info (healthInfoID, userID, gender, currWeight, goalWeight, height, age, activityLevel, dietaryPreferences, updatedAt) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement preparedStatement = DatabaseConnectionManager.getConnection().prepareStatement(createUserHealthInfoSQL)) {
             preparedStatement.setString(1, userHealthInfo.getHealthInfoID());
             preparedStatement.setString(2, userHealthInfo.getUserID());
-            preparedStatement.setDouble(3, userHealthInfo.getCurrWeight());
-            preparedStatement.setDouble(4, userHealthInfo.getGoalWeight());
-            preparedStatement.setDouble(5, userHealthInfo.getHeight());
-            preparedStatement.setInt(6, userHealthInfo.getAge());
-            preparedStatement.setString(7, userHealthInfo.getActivityLevel());
-            preparedStatement.setString(8, userHealthInfo.getDietaryPreferences());
-            preparedStatement.setTimestamp(9, userHealthInfo.getUpdatedAt());
+            preparedStatement.setString(3, userHealthInfo.getGender());
+            preparedStatement.setDouble(4, userHealthInfo.getCurrWeight());
+            preparedStatement.setDouble(5, userHealthInfo.getGoalWeight());
+            preparedStatement.setDouble(6, userHealthInfo.getHeight());
+            preparedStatement.setInt(7, userHealthInfo.getAge());
+            preparedStatement.setString(8, userHealthInfo.getActivityLevel());
+            preparedStatement.setString(9, userHealthInfo.getDietaryPreferences());
+            preparedStatement.setTimestamp(10, userHealthInfo.getUpdatedAt());
 
             int rowsAffected = preparedStatement.executeUpdate();
             return rowsAffected > 0;
@@ -81,6 +83,7 @@ public class UserHealthInfoDatabase {
 
     public static boolean editUserHealthInfo(UserHealthInfo userHealthInfo) {
         String updateSQL = "UPDATE user_health_info SET " +
+                "gender = ?, " +
                 "currWeight = ?, " +
                 "goalWeight = ?, " +
                 "height = ?, " +
@@ -91,13 +94,14 @@ public class UserHealthInfoDatabase {
                 "WHERE userID = ?";
 
         try (PreparedStatement preparedStatement = DatabaseConnectionManager.getConnection().prepareStatement(updateSQL)) {
-            preparedStatement.setDouble(1, userHealthInfo.getCurrWeight());
-            preparedStatement.setDouble(2, userHealthInfo.getGoalWeight());
-            preparedStatement.setDouble(3, userHealthInfo.getHeight());
-            preparedStatement.setInt(4, userHealthInfo.getAge());
-            preparedStatement.setString(5, userHealthInfo.getActivityLevel());
-            preparedStatement.setString(6, userHealthInfo.getDietaryPreferences());
-            preparedStatement.setString(7, userHealthInfo.getUserID());
+            preparedStatement.setString(1, userHealthInfo.getGender());
+            preparedStatement.setDouble(2, userHealthInfo.getCurrWeight());
+            preparedStatement.setDouble(3, userHealthInfo.getGoalWeight());
+            preparedStatement.setDouble(4, userHealthInfo.getHeight());
+            preparedStatement.setInt(5, userHealthInfo.getAge());
+            preparedStatement.setString(6, userHealthInfo.getActivityLevel());
+            preparedStatement.setString(7, userHealthInfo.getDietaryPreferences());
+            preparedStatement.setString(8, userHealthInfo.getUserID());
 
             int rowsAffected = preparedStatement.executeUpdate();
             return rowsAffected > 0;

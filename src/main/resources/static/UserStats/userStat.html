@@ -90,6 +90,15 @@
             <form id="userStatsForm">
 <!--                change these inputs to not required-->
                 <div class="mb-3">
+                    <label for="gender" class="form-label">Gender</label>
+                    <select class="form-select" id="gender" name = "gender">
+                        <option>Male</option>
+                        <option>Female</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
                     <label for="currentWeight" class="form-label">Current Weight</label>
                     <div class="input-group">
                         <input type="number" class="form-control" id="currentWeight" name="currentWeight" required>
@@ -188,6 +197,7 @@
 
                 const infoList = document.getElementById("userHealthInfoList");
                 infoList.innerHTML = `
+                <li class ="list-group-item"><strong>Gender:</strong> ${userData.gender}</li>
                 <li class="list-group-item"><strong>Current Weight:</strong> ${userData.currWeight} lbs</li>
                 <li class="list-group-item"><strong>Goal Weight:</strong> ${userData.goalWeight} lbs</li>
                 <li class="list-group-item"><strong>Height:</strong> ${userData.height} in</li>
@@ -241,6 +251,7 @@
 
             console.log("past e.preventDefault()")
 
+            const gender = document.getElementById("gender").value;
             const currWeight = document.getElementById("currentWeight").value;
             const goalWeight = document.getElementById("goalWeight").value;
             const age = document.getElementById("age").value;
@@ -249,13 +260,10 @@
             const dietaryPreferences = document.getElementById("dietaryPreferences").value;
 
             const sessionID = getCookie('sessionID')
-            console.log(sessionID)
 
-            console.log("Gathered data, here's dietaryPreferences:" + dietaryPreferences);
             //NEED TO SUBMIT A SESSION ID IN THE PAYLOAD
-            const payload = {sessionID, currWeight, goalWeight, age, height, dietaryPreferences, activityLevel};
+            const payload = {sessionID, gender, currWeight, goalWeight, age, height, dietaryPreferences, activityLevel};
 
-            console.log("initialize payload")
 
             try {
                 const response = await fetch('/api/updateHealthStats', {

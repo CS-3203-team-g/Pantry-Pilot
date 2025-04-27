@@ -48,6 +48,7 @@ public class UserHealthInfo {
         try {
             this.userHealthInfoID = resultSet.getString("healthInfoID");
             this.userID = resultSet.getString("userID");
+            this.gender = resultSet.getString("gender");
             this.currWeight = resultSet.getDouble("currWeight");
             this.goalWeight = resultSet.getDouble("goalWeight");
             this.height = resultSet.getDouble("height");
