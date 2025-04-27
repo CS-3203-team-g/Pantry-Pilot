@@ -72,7 +72,6 @@ public class Login implements HttpHandler {
         }
 
         // Verify the password using BCrypt
-        logger.error("password and hash: " + loginRequest.password + " " + user.getPasswordHash());
         if (!PasswordHasher.verifyPassword(loginRequest.password, user.getPasswordHash())) {
             logger.debug("Invalid password for user: {}", loginRequest.username);
             sendResponse(exchange, 401, "{\"message\": \"Invalid username or password\"}");
