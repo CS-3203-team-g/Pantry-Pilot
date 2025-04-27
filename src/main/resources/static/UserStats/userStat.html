@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>List Details - Pantry Pilot</title>
+    <!-- Bootstrap CSS -->
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+    />
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        html, body {
+            height: 100%;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+        }
+        .main-content {
+            flex: 1;
+        }
+        .form-container{
+            width: 100%;
+            max-width: 400px; /* Limits form width */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            background: #fff;
+        }
+
+    </style>
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container">
+        <a class="navbar-brand" href="#">Pantry Pilot</a>
+        <button
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarNav"
+                aria-controls="navbarNav"
+                aria-expanded="false"
+                aria-label="Toggle navigation"
+        >
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="#">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/recipes">Recipes</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/lists">Lists</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/UserStats">Stats</a>
+                </li>
+            </ul>
+            <!-- Login Button (will be replaced if a user is logged in) -->
+            <a id="loginBtn" href="login" class="btn btn-primary ms-3">Login</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<main class="main-content">
+
+    <!-- Add this form to input new items -->
+    <div class="container mt-4">
+        <h4>Let's see your current stats!</h4>
+        <div id="userHealthInfoContainer" class="container mt-4" style="display: none;">
+            <h4>Your Current Health Stats</h4>
+            <ul id="userHealthInfoList" class="list-group">
+                <!-- We will fill this with JS -->
+            </ul>
+        </div>
+
+        <div class="form-container">
+            <form id="userStatsForm">
+<!--                change these inputs to not required-->
+                <div class="mb-3">
+                    <label for="gender" class="form-label">Gender</label>
+                    <select class="form-select" id="gender" name = "gender">
+                        <option>Male</option>
+                        <option>Female</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="currentWeight" class="form-label">Current Weight</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="currentWeight" name="currentWeight" required>
+                        <span class="input-group-text"><span class="unit-display">lbs</span></span>
+                    </div>
+                    <label for="weightUnit"></label><select class="form-select" id="weightUnit" name="weightUnit">
+                        <option selected="selected">lbs</option>
+                        <option>kg</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="goalWeight" class="form-label">Goal Weight</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="goalWeight" name="goalWeight" required>
+                        <span class="input-group-text"><span class="unit-display">lbs</span></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="height" class="form-label">Height (inches) </label>
+                    <input type="number" class="form-control" id="height" name="height" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="age" class="form-label">Age</label>
+                    <input type="number" class="form-control" id="age" name="age" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="dietaryPreferences" class="form-label">Dietary Preference</label>
+                    <input type="text" class="form-control" id="dietaryPreferences" name = "dietaryPreference">
+                </div>
+
+                <div class="mb-3">
+                    <label for="activityLevel" class="form-label">Activity Level</label>
+                    <select class="form-select" id="activityLevel" name = "activityLevel">
+                        <option>Sedentary</option>
+                        <option>Lightly Active</option>
+                        <option>Active</option>
+                        <option>Highly Active</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<footer class="bg-dark text-light py-4">
+    <div class="container text-center">
+        <p class="mb-0">&copy; 2025 Pantry Pilot. All rights reserved.</p>
+    </div>
+</footer>
+
+<!-- Bootstrap JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Check if the user is logged in by looking for the "username" cookie
+    document.addEventListener("DOMContentLoaded", function () {
+        // Check if the user is logged in by looking for the "username" cookie
+        const username = getCookie("username");
+        if (username) {
+            // Replace the login button with a dropdown showing the username
+            const loginBtn = document.getElementById("loginBtn");
+            if (loginBtn) {
+                const dropdownDiv = document.createElement("div");
+                dropdownDiv.className = "dropdown ms-3";
+                dropdownDiv.innerHTML =
+                    '<button class="btn btn-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">' +
+                    username +
+                    '</button>' +
+                    '<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">' +
+                    '<li><a class="dropdown-item" href="/settings">Settings</a></li>' +
+                    //ADMIN_DROPDOWN_REPLACE
+                    '<li><a class="dropdown-item" href="/logout">Sign Out</a></li>' +
+                    "</ul>";
+                loginBtn.parentNode.replaceChild(dropdownDiv, loginBtn);
+            }
+        }
+    });
+    window.addEventListener("DOMContentLoaded", async function() {
+        try {
+            const response = await fetch('/api/getHealthStats', {
+                method: 'GET',
+                credentials: 'include'
+            });
+            if (response.ok) {
+                const userData = await response.json();
+
+                // Hide the form and show the health info
+                document.getElementById("userStatsForm").style.display = "none";
+                document.getElementById("userHealthInfoContainer").style.display = "block";
+
+                const infoList = document.getElementById("userHealthInfoList");
+                infoList.innerHTML = `
+                <li class ="list-group-item"><strong>Gender:</strong> ${userData.gender}</li>
+                <li class="list-group-item"><strong>Current Weight:</strong> ${userData.currWeight} lbs</li>
+                <li class="list-group-item"><strong>Goal Weight:</strong> ${userData.goalWeight} lbs</li>
+                <li class="list-group-item"><strong>Height:</strong> ${userData.height} in</li>
+                <li class="list-group-item"><strong>Age:</strong> ${userData.age}</li>
+                <li class="list-group-item"><strong>Activity Level:</strong> ${userData.activityLevel}</li>
+                <li class="list-group-item"><strong>Dietary Preferences:</strong> ${userData.dietaryPreference}</li>
+                <button class = "btn btn-primary">Edit</button>
+            `;
+            } else {
+                console.log("No existing health info found. Showing form.");
+            }
+        } catch (error) {
+            console.error("Error checking for existing health info:", error);
+        }
+    });
+
+    //need to add an edit button and be able to edit stats.
+    const userHealthInfoContainer = document.getElementById("userHealthInfoContainer")
+    const weightUnit = document.getElementById("weightUnit");
+    const selectedUnit = document.getElementsByClassName("unit-display")
+    const userStatsForm = document.getElementById("userStatsForm")
+
+    function getCookie(name) {
+        const nameEQ = name + "=";
+        const ca = document.cookie.split(";");
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === " ") c = c.substring(1);
+            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+
+
+    weightUnit.addEventListener("change", function() {
+        for(let span of selectedUnit){
+            span.innerText = this.value;
+        }
+    })
+
+    userHealthInfoContainer.addEventListener("click", () => {
+        document.getElementById("userStatsForm").style.display = "block";
+        userHealthInfoContainer.style.display = "none";
+    })
+
+    userStatsForm.addEventListener("submit",
+        async function (e) {
+            console.log("inside submit event")
+
+            e.preventDefault()
+
+            console.log("past e.preventDefault()")
+
+            const gender = document.getElementById("gender").value;
+            const currWeight = document.getElementById("currentWeight").value;
+            const goalWeight = document.getElementById("goalWeight").value;
+            const age = document.getElementById("age").value;
+            const height = document.getElementById("height").value;
+            const activityLevel = document.getElementById("activityLevel").value;
+            const dietaryPreferences = document.getElementById("dietaryPreferences").value;
+
+            const sessionID = getCookie('sessionID')
+
+            //NEED TO SUBMIT A SESSION ID IN THE PAYLOAD
+            const payload = {sessionID, gender, currWeight, goalWeight, age, height, dietaryPreferences, activityLevel};
+
+
+            try {
+                const response = await fetch('/api/updateHealthStats', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                console.log("response initialized")
+                if (!response.ok) {
+                    // Extract error message from the response if available
+                    const errorData = await response.json();
+                    alert(`Error: ${errorData.message || 'Unable to update recipe'}`);
+                } else {
+                    const result = await response.json();
+                    alert("Info updated successfully!");
+                    // Redirect the user to the login page or another page
+                    window.location.href = "/";
+                }
+            } catch (e) {
+                console.error("Error during updating-stats:", e);
+            }
+
+        })
+</script>
+</body>
+</html>

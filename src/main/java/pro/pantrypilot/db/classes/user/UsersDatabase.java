@@ -13,7 +13,10 @@ public class UsersDatabase {
     private static final Logger logger = LoggerFactory.getLogger(UsersDatabase.class);
 
     public static void initializeUserDatabase(){
-        String createUsersTableSQL = "CREATE TABLE IF NOT EXISTS users (\n"
+
+
+        String createUsersTableSQL =
+                "CREATE TABLE IF NOT EXISTS users (\n"
                 + "    userID CHAR(36) PRIMARY KEY DEFAULT (UUID()),\n"  // Auto-generate UUID
                 + "    username VARCHAR(50) NOT NULL UNIQUE,\n"          // Unique usernames
                 + "    email VARCHAR(100) NOT NULL UNIQUE,\n"            // Unique emails
