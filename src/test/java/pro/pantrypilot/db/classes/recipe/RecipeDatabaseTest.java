@@ -46,11 +46,20 @@ class RecipeDatabaseTest {
 
     @AfterEach
     void tearDown() throws Exception {
-        // Clean up test data
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute("DELETE FROM recipe_ingredients");
-            stmt.execute("DELETE FROM recipes");
-            stmt.execute("DELETE FROM ingredients");
+        // Clean up test data using its own connection
+        String sql1 = "DELETE FROM recipe_ingredients";
+        String sql2 = "DELETE FROM recipes";
+        String sql3 = "DELETE FROM ingredients";
+
+        try (Connection conn = DatabaseConnectionManager.getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql1);
+            stmt.execute(sql2);
+            stmt.execute(sql3);
+        } catch (Exception e) {
+            // Log or handle the exception during cleanup if necessary
+            System.err.println("Error during tearDown cleanup: " + e.getMessage());
+            throw e; // Re-throw if cleanup failure should fail the test run
         }
     }
 

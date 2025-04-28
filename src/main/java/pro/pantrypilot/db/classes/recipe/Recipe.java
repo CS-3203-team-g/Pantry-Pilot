@@ -6,6 +6,9 @@ import org.slf4j.LoggerFactory;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Recipe {
 
@@ -17,23 +20,26 @@ public class Recipe {
     private final String instructions;
     private ArrayList<RecipeIngredient> ingredients;
     private final float rating;
+    private String tags;
 
-
-    public Recipe(int recipeID, String title, String thumbnailUrl, String instructions, ArrayList<RecipeIngredient> ingredients, float rating) {
+    public Recipe(int recipeID, String title, String thumbnailUrl, String instructions, ArrayList<RecipeIngredient> ingredients, float rating, String tags) {
         this.recipeID = recipeID;
         this.title = title;
         this.thumbnailUrl = thumbnailUrl;
         this.instructions = instructions;
-        this.ingredients = ingredients;
+        this.ingredients = (ingredients != null) ? ingredients : new ArrayList<>();
         this.rating = rating;
+        this.tags = tags;
     }
 
-    public Recipe(int recipeID, String title, String thumbnailUrl, String instructions, float rating) {
+    public Recipe(int recipeID, String title, String thumbnailUrl, String instructions, float rating, String tags) {
         this.recipeID = recipeID;
         this.title = title;
         this.thumbnailUrl = thumbnailUrl;
         this.instructions = instructions;
         this.rating = rating;
+        this.tags = tags;
+        this.ingredients = new ArrayList<>();
     }
 
     public Recipe(ResultSet resultSet){
@@ -43,6 +49,8 @@ public class Recipe {
             this.thumbnailUrl = resultSet.getString("thumbnailUrl");
             this.instructions = resultSet.getString("instructions");
             this.rating = resultSet.getFloat("rating");
+            this.tags = resultSet.getString("tags");
+            this.ingredients = new ArrayList<>();
         } catch (SQLException e) {
             logger.error("Error creating recipe from ResultSet", e);
             throw new RuntimeException(e);
@@ -77,6 +85,36 @@ public class Recipe {
         return rating;
     }
 
+    public String getTagsString() {
+        return tags;
+    }
+
+    public List<String> getTagsList() {
+        if (tags == null || tags.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        return Arrays.stream(tags.split(","))
+                     .map(String::trim)
+                     .filter(tag -> !tag.isEmpty())
+                     .collect(Collectors.toList());
+    }
+
+    public void setTags(List<String> tagList) {
+        if (tagList == null || tagList.isEmpty()) {
+            this.tags = null;
+        } else {
+            this.tags = tagList.stream()
+                               .map(String::trim)
+                               .filter(tag -> !tag.isEmpty())
+                               .distinct()
+                               .collect(Collectors.joining(","));
+        }
+    }
+
+    public void setTagsString(String tags) {
+        this.tags = tags;
+    }
+
     @Override
     public String toString() {
         return "Recipe{" +
@@ -86,6 +124,7 @@ public class Recipe {
                 ", instructions='" + instructions + '\'' +
                 ", ingredients=" + ingredients +
                 ", rating=" + rating +
+                ", tags='" + tags + '\'' +
                 '}';
     }
 }

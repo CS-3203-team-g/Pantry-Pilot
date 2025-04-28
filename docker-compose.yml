@@ -13,6 +13,7 @@ services:
       - DB_USER=pantrypilot_user
       - DB_PASSWORD=pantry_pilot_password
       - DB_NAME=pantry_pilot
+      - GEMINI_API_KEY=AIzaSyDJdVW0ixqpoOY95UBrMrhZguin8pVnPkI
     ports:
         - "80:80"
     depends_on:

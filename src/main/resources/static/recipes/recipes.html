@@ -129,7 +129,7 @@
         }
 
         try {
-            const response = await fetch('/api/getRecipesWithoutIngredients');
+            const response = await fetch('/api/getRecipesWithIngredients');
             if (!response.ok) {
                 throw new Error('Failed to fetch recipes');
             }
