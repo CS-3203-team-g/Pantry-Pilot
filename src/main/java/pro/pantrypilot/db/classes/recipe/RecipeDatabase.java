@@ -37,8 +37,7 @@ public class RecipeDatabase {
                 + "    title VARCHAR(255) NOT NULL,\n"
                 + "    instructions TEXT NOT NULL,\n"
                 + "    thumbnailUrl VARCHAR(255),\n"
-                + "    rating FLOAT CHECK (rating >= 0 AND rating <= 5),\n"
-                + "    tags TEXT NULL\n" // tags column included here
+                + "    rating FLOAT CHECK (rating >= 0 AND rating <= 5)\n"
                 + ");";
         try (Connection conn = getPersistentConnection(); // Or DatabaseConnectionManager.getConnection()
              Statement stmt = conn.createStatement()) {
