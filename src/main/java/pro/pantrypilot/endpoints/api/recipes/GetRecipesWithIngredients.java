@@ -29,13 +29,13 @@ public class GetRecipesWithIngredients implements HttpHandler {
 
         List<Recipe> recipes = RecipeDatabase.getRecipesWithIngredients();
         
-        // Add validation for each recipe
-        for (Recipe recipe : recipes) {
-            ValidationResult result = RecipeValidator.validateRecipe(recipe.getTitle());
-            logger.info("Client-side validation for '{}': {}", 
-                recipe.getTitle(), 
-                result.isValid() ? "VALID" : "INVALID - " + result.getErrorMessage());
-        }
+//        // Add validation for each recipe
+//        for (Recipe recipe : recipes) {
+//            ValidationResult result = RecipeValidator.validateRecipe(recipe.getTitle());
+//           // logger.info("Client-side validation for '{}': {}",
+//                //recipe.getTitle(),
+//               // result.isValid() ? "VALID" : "INVALID - " + result.getErrorMessage());
+//        }
 
         Gson gson = new Gson();
         String jsonResponse = gson.toJson(recipes);

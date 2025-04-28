@@ -30,15 +30,15 @@ public class GetRecipesWithoutIngredients implements HttpHandler {
 
         ArrayList<Recipe> recipes = RecipeDatabase.getRecipesNoIngredients();
         
-        // Validate each recipe using our validator
-        for (Recipe recipe : recipes) {
-            ValidationResult result = RecipeValidator.validateRecipe(recipe.getTitle());
-            if (result.isValid()) {
-                logger.info("Recipe validated successfully: {}", recipe.getTitle());
-            } else {
-                logger.warn("Recipe validation failed: {} - {}", recipe.getTitle(), result.getErrorMessage());
-            }
-        }
+//        // Validate each recipe using our validator
+//        for (Recipe recipe : recipes) {
+//            ValidationResult result = RecipeValidator.validateRecipe(recipe.getTitle());
+//            if (result.isValid()) {
+//                // logger.info("Recipe validated successfully: {}", recipe.getTitle());
+//            } else {
+//               // logger.warn("Recipe validation failed: {} - {}", recipe.getTitle(), result.getErrorMessage());
+//            }
+//        }
 
         Gson gson = new Gson();
         String jsonResponse = gson.toJson(recipes);
