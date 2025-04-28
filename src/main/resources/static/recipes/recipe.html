@@ -290,35 +290,89 @@
             ratingHtml += ` (${ratingValue.toFixed(1)})</div>`;
         }
 
-        // Ingredients HTML
-        let ingredientsHtml = '<ul class="list-group list-group-flush mb-4">';
-        if (recipe.ingredients && recipe.ingredients.length > 0) {
-            recipe.ingredients.forEach(ing => {
-                ingredientsHtml += `<li class="list-group-item">${escapeHtml(ing.quantity)} ${escapeHtml(ing.unit || '')} ${escapeHtml(ing.ingredientName)}</li>`;
-            });
-        } else {
-            ingredientsHtml += '<li class="list-group-item">No ingredients listed.</li>';
+        // Populate ingredients - UPDATED LOGIC
+        const ingredientsContainer = document.getElementById('ingredientsContainer'); // Target the container div
+        ingredientsContainer.innerHTML = ''; // Clear previous content
+
+        let ingredientsHtml = '';
+        // PRIORITIZE ingredientsJson if it exists (for AI recipes)
+        if (recipe.ingredientsJson && recipe.ingredientsJson.trim() !== '' && recipe.ingredientsJson.toLowerCase() !== 'null') {
+            try {
+                const aiIngredients = JSON.parse(recipe.ingredientsJson);
+                if (Array.isArray(aiIngredients) && aiIngredients.length > 0) {
+                    ingredientsHtml = '<ul class="list-group list-group-flush">';
+                    aiIngredients.forEach(ing => {
+                        // Escape potential HTML in ingredient string
+                        ingredientsHtml += `<li class="list-group-item">${escapeHtml(ing)}</li>`; 
+                    });
+                    ingredientsHtml += '</ul>';
+                }
+            } catch (e) {
+                console.error("Error parsing ingredientsJson:", e);
+                console.error("ingredientsJson string was:", recipe.ingredientsJson);
+                // Fallback or error message if parsing fails
+                ingredientsHtml = '<p>Error displaying ingredients.</p>';
+            }
         }
-        ingredientsHtml += '</ul>';
+        
+        // Fallback to original ingredients list (from DB joins) if ingredientsJson wasn't used
+        if (!ingredientsHtml && recipe.ingredients && recipe.ingredients.length > 0) {
+             ingredientsHtml = '<ul class="list-group list-group-flush">';
+             recipe.ingredients.forEach(ing => {
+                 // Escape potential HTML
+                 const text = `${escapeHtml(ing.quantity) || ''} ${escapeHtml(ing.unit) || ''} ${escapeHtml(ing.ingredientName)}`;
+                 ingredientsHtml += `<li class="list-group-item">${text.trim()}</li>`; 
+             });
+             ingredientsHtml += '</ul>';
+        }
+        
+        // If still no ingredients HTML, show the message
+        if (!ingredientsHtml) {
+            ingredientsHtml = '<p>No ingredients listed.</p>';
+        }
+        
+        ingredientsContainer.innerHTML = ingredientsHtml;
+
+        // Populate instructions
+        const instructionsElement = document.getElementById('instructions');
+        instructionsElement.innerHTML = escapeHtml(recipe.instructions);
 
         // Assemble final HTML
         detailsDiv.innerHTML = `
-            <div class="col-md-6 mb-4 mb-md-0">
-                <img src="${escapeHtml(recipe.thumbnailUrl || 'https://via.placeholder.com/400x300.png?text=No+Image')}" alt="${escapeHtml(recipe.title)}" class="img-fluid rounded recipe-img">
-            </div>
-            <div class="col-md-6">
-                <h2 class="mb-3">${escapeHtml(recipe.title)}</h2>
-                ${tagsHtml}
-                ${ratingHtml}
+            <div class="col-md-6 order-md-2">
+                <h2>${escapeHtml(recipe.title)}</h2>
+                <div class="tags-container">
+                    ${tagsHtml}
+                </div>
+                <div class="rating mb-3">
+                    ${ratingHtml}
+                </div>
+
                 <h4>Ingredients</h4>
-                ${ingredientsHtml}
-                 <button type="button" class="btn btn-success mt-3" data-bs-toggle="modal" data-bs-target="#addToListModal">
-                     Add Ingredients to Shopping List
-                 </button>
+                <div id="ingredientsContainer"> 
+                    <!-- Ingredients list will be populated here -->
+                    <p>Loading ingredients...</p> 
+                </div>
+                <button class="btn btn-success mt-3" data-bs-toggle="modal" data-bs-target="#addToListModal">
+                    Add Ingredients to Shopping List
+                </button>
             </div>
-            <div class="col-12 mt-4">
+            <div class="col-md-6 order-md-1 text-center">
+                 <img src="${escapeHtml(recipe.thumbnailUrl) || '/images/default-thumbnail.jpg'}" 
+                      class="img-fluid recipe-img mb-3" 
+                      alt="${escapeHtml(recipe.title)}" 
+                      onerror="this.onerror=null; this.src='/images/default-thumbnail.jpg';">
+            </div>
+            <div class="col-12 order-md-3 mt-4">
                 <h4>Instructions</h4>
-                <p style="white-space: pre-wrap;">${escapeHtml(recipe.instructions)}</p>
+                <div id="instructions" style="white-space: pre-wrap;">${escapeHtml(recipe.instructions)}</div>
+                
+                <!-- Display Prep/Cook Time/Servings if available -->
+                <div class="mt-3 row">
+                    ${recipe.prepTimeMinutes ? `<div class="col-auto"><small><strong>Prep:</strong> ${escapeHtml(recipe.prepTimeMinutes)} min</small></div>` : ''}
+                    ${recipe.cookTimeMinutes ? `<div class="col-auto"><small><strong>Cook:</strong> ${escapeHtml(recipe.cookTimeMinutes)} min</small></div>` : ''}
+                    ${recipe.servings ? `<div class="col-auto"><small><strong>Servings:</strong> ${escapeHtml(recipe.servings)}</small></div>` : ''}
+                </div>
             </div>
         `;
     }

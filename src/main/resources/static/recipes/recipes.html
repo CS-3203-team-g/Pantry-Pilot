@@ -80,6 +80,46 @@
 <section class="py-5">
     <div class="container">
         <h2 class="mb-4">Recipes</h2>
+
+        <!-- AI Recipe Generation Form -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Generate Recipe with AI</h5>
+                <form action="/recipes" method="POST">
+                    <div class="mb-3">
+                        <label for="ingredients" class="form-label">Ingredients (comma-separated):</label>
+                        <textarea class="form-control" id="ingredients" name="ingredients" rows="3" placeholder="e.g., chicken breast, broccoli, soy sauce, rice"></textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="cuisine" class="form-label">Cuisine Style (optional):</label>
+                            <input type="text" class="form-control" id="cuisine" name="cuisine" placeholder="e.g., Italian, Mexican, Quick">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="mealType" class="form-label">Meal Type (optional):</label>
+                            <input type="text" class="form-control" id="mealType" name="mealType" placeholder="e.g., Dinner, Lunch, Snack">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                         <div class="col-md-6">
+                            <label for="dietaryRestrictions" class="form-label">Dietary Restrictions (comma-separated, optional):</label>
+                            <input type="text" class="form-control" id="dietaryRestrictions" name="dietaryRestrictions" placeholder="e.g., vegetarian, gluten-free">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="excludedIngredients" class="form-label">Exclude Ingredients (comma-separated, optional):</label>
+                            <input type="text" class="form-control" id="excludedIngredients" name="excludedIngredients" placeholder="e.g., mushrooms, nuts">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customPrompt" class="form-label">Other Requests (optional):</label>
+                        <input type="text" class="form-control" id="customPrompt" name="customPrompt" placeholder="e.g., make it spicy, kid-friendly, ready in 30 mins">
+                    </div>
+                    <button type="submit" class="btn btn-success">Generate Recipe</button>
+                </form>
+            </div>
+        </div>
+        <!-- End AI Recipe Generation Form -->
+
         <div class="row" id="recipeGrid">
             <!-- Recipe cards will be inserted here by JavaScript -->
         </div>

@@ -19,8 +19,12 @@ public class Recipe {
     private final String thumbnailUrl;
     private final String instructions;
     private ArrayList<RecipeIngredient> ingredients;
+    private String ingredientsJson;
     private final float rating;
     private String tags;
+    private Integer prepTimeMinutes;
+    private Integer cookTimeMinutes;
+    private Integer servings;
 
     public Recipe(int recipeID, String title, String thumbnailUrl, String instructions, ArrayList<RecipeIngredient> ingredients, float rating, String tags) {
         this.recipeID = recipeID;
@@ -28,8 +32,12 @@ public class Recipe {
         this.thumbnailUrl = thumbnailUrl;
         this.instructions = instructions;
         this.ingredients = (ingredients != null) ? ingredients : new ArrayList<>();
+        this.ingredientsJson = null;
         this.rating = rating;
         this.tags = tags;
+        this.prepTimeMinutes = null;
+        this.cookTimeMinutes = null;
+        this.servings = null;
     }
 
     public Recipe(int recipeID, String title, String thumbnailUrl, String instructions, float rating, String tags) {
@@ -40,6 +48,10 @@ public class Recipe {
         this.rating = rating;
         this.tags = tags;
         this.ingredients = new ArrayList<>();
+        this.ingredientsJson = null;
+        this.prepTimeMinutes = null;
+        this.cookTimeMinutes = null;
+        this.servings = null;
     }
 
     public Recipe(ResultSet resultSet){
@@ -51,10 +63,31 @@ public class Recipe {
             this.rating = resultSet.getFloat("rating");
             this.tags = resultSet.getString("tags");
             this.ingredients = new ArrayList<>();
+
+            this.prepTimeMinutes = (Integer) resultSet.getObject("prep_time_minutes");
+            this.cookTimeMinutes = (Integer) resultSet.getObject("cook_time_minutes");
+            this.servings = (Integer) resultSet.getObject("servings");
+            this.ingredientsJson = resultSet.getString("ingredients_json");
+
         } catch (SQLException e) {
             logger.error("Error creating recipe from ResultSet", e);
             throw new RuntimeException(e);
         }
+    }
+
+    // Constructor specifically for AI-generated recipes (without recipeID initially)
+    public Recipe(String title, String thumbnailUrl, String instructions, String ingredientsJson, float rating, String tags, Integer prepTimeMinutes, Integer cookTimeMinutes, Integer servings) {
+        this.recipeID = 0; // Default to 0 for new recipes before insertion
+        this.title = title;
+        this.thumbnailUrl = thumbnailUrl;
+        this.instructions = instructions;
+        this.ingredients = new ArrayList<>(); // Initialize empty, primary ingredients are in JSON
+        this.ingredientsJson = ingredientsJson;
+        this.rating = rating; // Default rating for new recipes
+        this.tags = tags;
+        this.prepTimeMinutes = prepTimeMinutes;
+        this.cookTimeMinutes = cookTimeMinutes;
+        this.servings = servings;
     }
 
     public int getRecipeID() {
@@ -115,6 +148,38 @@ public class Recipe {
         this.tags = tags;
     }
 
+    public String getIngredientsJson() {
+        return ingredientsJson;
+    }
+
+    public void setIngredientsJson(String ingredientsJson) {
+        this.ingredientsJson = ingredientsJson;
+    }
+
+    public Integer getPrepTimeMinutes() {
+        return prepTimeMinutes;
+    }
+
+    public void setPrepTimeMinutes(Integer prepTimeMinutes) {
+        this.prepTimeMinutes = prepTimeMinutes;
+    }
+
+    public Integer getCookTimeMinutes() {
+        return cookTimeMinutes;
+    }
+
+    public void setCookTimeMinutes(Integer cookTimeMinutes) {
+        this.cookTimeMinutes = cookTimeMinutes;
+    }
+
+    public Integer getServings() {
+        return servings;
+    }
+
+    public void setServings(Integer servings) {
+        this.servings = servings;
+    }
+
     @Override
     public String toString() {
         return "Recipe{" +
@@ -123,8 +188,12 @@ public class Recipe {
                 ", thumbnailUrl='" + thumbnailUrl + '\'' +
                 ", instructions='" + instructions + '\'' +
                 ", ingredients=" + ingredients +
+                ", ingredientsJson='" + ingredientsJson + '\'' +
                 ", rating=" + rating +
                 ", tags='" + tags + '\'' +
+                ", prepTimeMinutes=" + prepTimeMinutes +
+                ", cookTimeMinutes=" + cookTimeMinutes +
+                ", servings=" + servings +
                 '}';
     }
 }
