@@ -19,19 +19,6 @@ public class RecipeValidator {
             return ValidationResult.error(errorMessage);
         }
 
-        // Remove the database existence check during loading
-        // List<Recipe> recipes = recipeDatabase.getAllRecipes();
-        // Recipe foundRecipe = recipes.stream()
-        //     .filter(r -> r.getTitle().equals(recipeName))
-        //     .findFirst()
-        //     .orElse(null);
-        //
-        // if (foundRecipe == null) {
-        //     String errorMessage = "Recipe '" + recipeName + "' not found in database";
-        //     LOGGER.log(Level.WARNING, errorMessage);
-        //     return ValidationResult.error(errorMessage);
-        // }
-
         LOGGER.info("=== Recipe '" + recipeName + "' passed validation ===");
         return ValidationResult.success();
     }
