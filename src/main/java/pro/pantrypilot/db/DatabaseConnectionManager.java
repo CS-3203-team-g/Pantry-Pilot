@@ -9,6 +9,7 @@ import pro.pantrypilot.db.classes.session.SessionsDatabase;
 import pro.pantrypilot.db.classes.shoppingList.ShoppingListIngredientsDatabase;
 import pro.pantrypilot.db.classes.shoppingList.ShoppingListsDatabase;
 import pro.pantrypilot.db.classes.user.UsersDatabase;
+import pro.pantrypilot.db.classes.userHealthInfo.UserHealthInfoDatabase;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -71,6 +72,7 @@ public class DatabaseConnectionManager {
         RecipeIngredientsDatabase.initializeRecipeIngredientsDatabase();
         ShoppingListsDatabase.initializeShoppingListsDatabase();
         ShoppingListIngredientsDatabase.initializeShoppingListIngredientsDatabase();
+        UserHealthInfoDatabase.initializeUserHealthInfoDatabase(); //might need to move this to the front
 
     }
 }
