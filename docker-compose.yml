@@ -11,7 +11,7 @@ services:
       - DB_USER=pantrypilot_user
       - DB_PASSWORD=pantry_pilot_password
       - DB_NAME=pantry_pilot
-      - GOOGLE_API_KEY=AIzaSyCuvL_FOfax0YSedQ9GZw1cosR_oFFr8uM
+      - GOOGLE_API_KEY=ENTER_KEY_HERE
     ports:
         - "80:80"
     depends_on:
