@@ -80,6 +80,13 @@
             <version>0.4</version>
         </dependency>
 
+        <!-- Apache HttpClient for Java 8 compatibility -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.14</version> <!-- Use a recent stable version -->
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -47,6 +47,17 @@
             max-height: 20rem;
             overflow-y: auto;
         }
+        /* Style for the tags container */
+        .tags-container {
+            margin-top: 0.5rem; /* Add some space above the tags */
+            margin-bottom: 1rem; /* Add some space below the tags */
+        }
+        /* Style for individual tags (badges) */
+        .recipe-tag {
+            margin-right: 0.3rem; /* Space between tags */
+            margin-bottom: 0.3rem; /* Allow wrapping */
+            font-size: 0.85em; /* Slightly smaller font */
+        }
     </style>
 </head>
 <body>
@@ -89,6 +100,13 @@
         <div class="container">
             <div id="recipeDetails" class="row">
                 <!-- Recipe details will be inserted here by JavaScript -->
+                <!-- Placeholder while loading -->
+                <div class="col-12 text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Loading recipe details...</p>
+                </div>
             </div>
         </div>
     </section>
@@ -156,6 +174,12 @@
 
 
 <script>
+    // --- Global-like variables --- 
+    let shoppingLists = [];
+    let search = document.getElementById("searchList"); // Initialize search input variable
+    let items = document.getElementsByClassName("dropdown-item"); // Initialize items collection
+
+    // --- Helper Functions --- 
     function showSuccessToast() {
         var toastElement = document.getElementById('successToast');
         var toast = new bootstrap.Toast(toastElement);
@@ -168,202 +192,229 @@
         toast.show();
     }
 
-    let shoppingLists = [];
-
     function getShoppingListIdByName(name) {
-        return shoppingLists.find(list => list.name === name).shoppingListID;
+        const foundList = shoppingLists.find(list => list.name === name);
+        return foundList ? foundList.shoppingListID : null; // Return null if not found
     }
 
-    async function saveToList() {
-        shoppingListId = getShoppingListIdByName($('#dropdown_lists').text())
-
-        try {
-            const response = await fetch('/api/addRecipeIngredientsToShoppingList', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ 
-                    recipeID: getRecipeID(), 
-                    shoppingListID: shoppingListId 
-                })
-            });
-            if (!response.ok) {
-                var myModal = bootstrap.Modal.getInstance(document.getElementById('addToListModal'));
-                myModal.hide();
-                showFailedToast();
-                throw new Error('Failed to add ingredients to shopping list');
-            }
-            var myModal = bootstrap.Modal.getInstance(document.getElementById('addToListModal'));
-            myModal.hide();
-            showSuccessToast();
-
-        } catch (error) {
-            var myModal = bootstrap.Modal.getInstance(document.getElementById('addToListModal'));
-            myModal.hide();
-            showFailedToast();
-            console.error('Error adding ingredients to shopping list:', error);
-        }
-    }
-
-    document.addEventListener("DOMContentLoaded", async function () {
-        let names = []
-
-        try {
-            const response = await fetch('/api/getShoppingLists', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({}) // Empty body, server gets sessionID from cookies
-            });
-            if (!response.ok) {
-                throw new Error('Failed to fetch shopping lists');
-            }
-            const lists = await response.json();
-            shoppingLists = lists;
-            lists.forEach(list => {
-                names.push(list.name)
-            });
-        } catch (error) {
-            console.error('Error fetching shopping lists:', error);
-        }
-        buildDropDown(names)
-    });
-
-    //Find the input search box
-    let search = document.getElementById("searchList");
-
-    //Find every item inside the dropdown
-    let items = document.getElementsByClassName("dropdown-item");
-
-    function buildDropDown(values) {
-        let contents = []
-        for (let name of values) {
-            contents.push('<input type="button" class="dropdown-item" type="button" value="' + name + '"/>')
-        }
-        $('#menuItems').append(contents.join(""))
-
-        //Hide the row that shows no items were found
-        $('#empty').hide()
-        
-        // Refresh items collection after adding new ones
-        items = document.getElementsByClassName("dropdown-item");
-    }
-
-    //Capture the event when user types into the search box
-    search.addEventListener('input', function() {
-        filter(this.value.trim().toLowerCase());
-    });
-
-    //For every word entered by the user, check if the symbol starts with that word
-    //If it does show the symbol, else hide it
-    function filter(word) {
-        let length = items.length
-        let hidden = 0
-        for (let i = 0; i < length; i++) {
-            const value = items[i].getAttribute('value') || '';
-            if (value.toLowerCase().includes(word)) {
-                $(items[i]).show()
-            }
-            else {
-                $(items[i]).hide()
-                hidden++
-            }
-        }
-
-        //If all items are hidden, show the empty view
-        if (hidden === length) {
-            $('#empty').show()
-        }
-        else {
-            $('#empty').hide()
-        }
-    }
-
-    //If the user clicks on any item, set the title of the button as the text of the item
-    $('#menuItems').on('click', '.dropdown-item', function(){
-        $('#dropdown_lists').text($(this)[0].value)
-        const dropdownEl = document.getElementById('dropdown_lists');
-        const dropdown = bootstrap.Dropdown.getInstance(dropdownEl);
-        dropdown.hide();
-    })
-</script>
-
-<!-- JavaScript to fetch and display recipe details -->
-<script>
     function getRecipeID() {
         const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('id');
+        const id = parseInt(urlParams.get('id'));
+        return isNaN(id) ? null : id; // Return null if parsing fails
     }
 
-    document.addEventListener("DOMContentLoaded", async function () {
-        const recipeID = getRecipeID();
-        if (!recipeID) {
-            console.error('No recipe ID found in the URL');
+    function escapeHtml(unsafe) {
+        if (unsafe === null || typeof unsafe === 'undefined') return '';
+        return unsafe
+             .toString()
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+     }
+
+    // --- Core Logic Functions --- 
+    async function saveToList() {
+        const selectedListName = $('#dropdown_lists').text().trim();
+        if (!selectedListName || selectedListName === 'Lists') {
+             alert('Please select a shopping list first.');
+             return;
+        }
+        const shoppingListId = getShoppingListIdByName(selectedListName);
+        const recipeId = getRecipeID();
+
+        if (!shoppingListId || !recipeId) {
+            console.error('Missing shoppingListId or recipeId');
+            showFailedToast();
             return;
         }
 
         try {
-            const response = await fetch(`/api/getRecipeWithIngredients?id=${recipeID}`);
+            const response = await fetch('/api/addRecipeIngredientsToShoppingList', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    recipeID: recipeId, 
+                    shoppingListID: shoppingListId 
+                })
+            });
+            const myModalEl = document.getElementById('addToListModal');
+            const myModal = bootstrap.Modal.getInstance(myModalEl);
+            if (myModal) myModal.hide(); // Hide modal safely
+
             if (!response.ok) {
-                throw new Error('Failed to fetch recipe details');
-            }
-            const recipe = await response.json();
-            const recipeDetails = document.getElementById('recipeDetails');
-
-            if (recipe && recipe.rating !== undefined) {
-                recipeDetails.innerHTML = `
-            <div class="col-12">
-              <section id="recipeTitle" class="text-center mb-4">
-                <h2>${recipe.title}</h2>
-                <div class="rating">
-                  ${'<i class="fas fa-star"></i>'.repeat(Math.floor(recipe.rating))}
-                  ${'<i class="far fa-star"></i>'.repeat(5 - Math.floor(recipe.rating))}
-                  <span>${recipe.rating.toFixed(1)}/5</span>
-                </div>
-              </section>
-            </div>
-            <div class="col-12">
-              <section id="recipeImage" class="text-center mb-4">
-                  <img src="${recipe.thumbnailUrl || 'default-thumbnail.jpg'}" class="recipe-img img-fluid" alt="${recipe.title}" style="width: 33%; height: auto;">
-              </section>
-
-              <!-- Button to trigger modal -->
-                <div>
-                  <section id="recipeActions" class="text-center mb-4">
-                    ${getCookie('username') ? `
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addToListModal" style="width: 15%; height: auto;">
-                        Add Ingredients
-                    </button>
-                    ` : ''}
-                  </section>
-                </div>
-            </div>
-            <div class="col-12">
-              <section id="recipeDirections" class="mb-4">
-                <h4>Instructions</h4>
-                <p>${recipe.instructions}</p>
-              </section>
-            </div>
-            <div class="col-12">
-              <section id="recipeIngredients" class="mb-4">
-                <h4>Ingredients</h4>
-                <ul>
-                  ${recipe.ingredients.map(ingredient => `
-                    <li>${ingredient.quantity} ${ingredient.unit} ${ingredient.ingredientName}</li>
-                  `).join('')}
-                </ul>
-              </section>
-            </div>
-          `;
+                showFailedToast();
+                throw new Error('Failed to add ingredients to shopping list');
             } else {
-                console.error('Recipe rating is undefined');
+                showSuccessToast();
             }
         } catch (error) {
-            console.error('Error fetching recipe details:', error);
+            console.error('Error adding ingredients to shopping list:', error);
+            showFailedToast(); // Show fail toast on exception too
         }
+    }
+
+    function displayRecipeDetails(recipe) {
+        const detailsDiv = document.getElementById('recipeDetails');
+        detailsDiv.innerHTML = ''; // Clear loading/previous
+
+        if (!recipe) {
+            detailsDiv.innerHTML = '<p class="text-danger text-center">Error: Recipe not found or could not be loaded.</p>';
+            return;
+        }
+
+        // Tags HTML
+        let tagsHtml = '';
+        if (recipe.tags && recipe.tags.trim().length > 0) {
+            const tagsArray = recipe.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+            if (tagsArray.length > 0) {
+                tagsHtml = '<div class="tags-container">';
+                tagsArray.forEach(tag => {
+                    tagsHtml += `<span class="badge bg-secondary recipe-tag">${escapeHtml(tag)}</span>`;
+                });
+                tagsHtml += '</div>';
+            }
+        }
+
+        // Rating HTML
+        let ratingHtml = '';
+        const ratingValue = parseFloat(recipe.rating);
+        if (!isNaN(ratingValue) && ratingValue >= 0) {
+            ratingHtml = '<div class="rating mb-3">';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= ratingValue) ratingHtml += '<i class="fas fa-star text-warning"></i>';
+                else if (i - 0.5 <= ratingValue) ratingHtml += '<i class="fas fa-star-half-alt text-warning"></i>';
+                else ratingHtml += '<i class="far fa-star text-muted"></i>';
+            }
+            ratingHtml += ` (${ratingValue.toFixed(1)})</div>`;
+        }
+
+        // Ingredients HTML
+        let ingredientsHtml = '<ul class="list-group list-group-flush mb-4">';
+        if (recipe.ingredients && recipe.ingredients.length > 0) {
+            recipe.ingredients.forEach(ing => {
+                ingredientsHtml += `<li class="list-group-item">${escapeHtml(ing.quantity)} ${escapeHtml(ing.unit || '')} ${escapeHtml(ing.ingredientName)}</li>`;
+            });
+        } else {
+            ingredientsHtml += '<li class="list-group-item">No ingredients listed.</li>';
+        }
+        ingredientsHtml += '</ul>';
+
+        // Assemble final HTML
+        detailsDiv.innerHTML = `
+            <div class="col-md-6 mb-4 mb-md-0">
+                <img src="${escapeHtml(recipe.thumbnailUrl || 'https://via.placeholder.com/400x300.png?text=No+Image')}" alt="${escapeHtml(recipe.title)}" class="img-fluid rounded recipe-img">
+            </div>
+            <div class="col-md-6">
+                <h2 class="mb-3">${escapeHtml(recipe.title)}</h2>
+                ${tagsHtml}
+                ${ratingHtml}
+                <h4>Ingredients</h4>
+                ${ingredientsHtml}
+                 <button type="button" class="btn btn-success mt-3" data-bs-toggle="modal" data-bs-target="#addToListModal">
+                     Add Ingredients to Shopping List
+                 </button>
+            </div>
+            <div class="col-12 mt-4">
+                <h4>Instructions</h4>
+                <p style="white-space: pre-wrap;">${escapeHtml(recipe.instructions)}</p>
+            </div>
+        `;
+    }
+
+    function buildDropDown(values) {
+        let contents = [];
+        $('#menuItems').empty(); // Clear previous items
+        if (values && values.length > 0) {
+             for (let name of values) {
+                 contents.push(`<input type="button" class="dropdown-item" type="button" value="${escapeHtml(name)}"/>`);
+             }
+             $('#menuItems').append(contents.join(""));
+             $('#empty').hide();
+             items = document.getElementsByClassName("dropdown-item"); // Refresh items collection
+        } else {
+             $('#empty').show();
+        }
+    }
+
+    const filter = (word) => {
+        let length = items.length;
+        let hidden = 0;
+        for (let i = 0; i < length; i++) {
+            if (items[i].value.toLowerCase().includes(word)) {
+                $(items[i]).show();
+            } else {
+                $(items[i]).hide();
+                hidden++;
+            }
+        }
+        if (hidden === length) {
+            $('#empty').show();
+        } else {
+            $('#empty').hide();
+        }
+    }
+
+    // --- Event Listeners --- 
+    document.addEventListener("DOMContentLoaded", async function () {
+        const recipeId = getRecipeID();
+        const detailsDiv = document.getElementById('recipeDetails');
+
+        if (!recipeId) {
+            detailsDiv.innerHTML = '<p class="text-danger text-center">Error: Invalid Recipe ID in URL.</p>';
+            return;
+        }
+
+        // Fetch recipe data
+        try {
+            const response = await fetch(`/api/getRecipeWithIngredients?id=${recipeId}`);
+            if (!response.ok) {
+                 let errorMsg = `Error: ${response.status} ${response.statusText}`;
+                 if(response.status === 404) errorMsg = "Error: Recipe not found.";
+                 throw new Error(errorMsg);
+            }
+            const recipe = await response.json();
+            displayRecipeDetails(recipe); // Render details
+        } catch (error) {
+            console.error('Error fetching recipe details:', error);
+            detailsDiv.innerHTML = `<p class="text-danger text-center">Error loading recipe: ${escapeHtml(error.message)}</p>`;
+        }
+
+        // Fetch shopping lists for the modal
+        let listNames = [];
+        try {
+            const listResponse = await fetch('/api/getShoppingLists', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({}) // Assuming session handled by server
+            });
+            if (!listResponse.ok) {
+                throw new Error('Failed to fetch shopping lists');
+            }
+            const lists = await listResponse.json();
+            shoppingLists = lists; // Store full list objects
+            listNames = lists.map(list => list.name); // Extract names for dropdown
+        } catch (error) {
+            console.error('Error fetching shopping lists:', error);
+        }
+        buildDropDown(listNames); // Build the dropdown menu
     });
+
+    // Dropdown search filter listener
+    if (search) { 
+        search.addEventListener('input', () => {
+            filter(search.value.trim().toLowerCase());
+        });
+    }
+
+    // Dropdown item click listener
+    $('#menuItems').on('click', '.dropdown-item', function(){
+        $('#dropdown_lists').text($(this).val());
+        // Optional: Close dropdown after selection if needed
+        // $("#dropdown_lists").dropdown('toggle'); 
+    });
+
 </script>
 
 <!-- Custom Script for Login/Logout Logic -->
