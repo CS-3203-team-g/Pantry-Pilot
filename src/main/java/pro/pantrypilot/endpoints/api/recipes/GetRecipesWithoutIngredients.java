@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 
 public class GetRecipesWithoutIngredients implements HttpHandler {
 

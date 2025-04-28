@@ -35,4 +35,21 @@ public class RecipeValidator {
         LOGGER.info("=== Recipe '" + recipeName + "' passed validation ===");
         return ValidationResult.success();
     }
+
+    public static ValidationResult validateRecipeExists(String recipeName) {
+        if (recipeName == null || recipeName.trim().isEmpty()) {
+            String errorMessage = "Recipe name cannot be null or empty";
+            LOGGER.warning(errorMessage);
+            return ValidationResult.error(errorMessage);
+        }
+
+        List<Recipe> recipes = recipeDatabase.getAllRecipes();
+        boolean exists = recipes.stream().anyMatch(r -> r.getTitle().equals(recipeName));
+        if (!exists) {
+            String errorMessage = "Recipe '" + recipeName + "' not found in database";
+            LOGGER.warning(errorMessage);
+            return ValidationResult.error(errorMessage);
+        }
+        return ValidationResult.success();
+    }
 }
