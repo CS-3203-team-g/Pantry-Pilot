@@ -2,8 +2,8 @@ package pro.pantrypilot.db.classes.recipe;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pro.pantrypilot.db.DatabaseConnectionManager;
 import pro.pantrypilot.ai.RecipeAiTagger;
+import pro.pantrypilot.db.DatabaseConnectionManager;
 
 import java.sql.*;
 import java.util.ArrayList;
